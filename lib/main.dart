@@ -1,8 +1,38 @@
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'src/core/api/api_service.dart';
+import 'src/data/repositories/category_repository.dart';
+import 'src/data/repositories/products_repository.dart';
+import 'src/presentation/providers/category_provider.dart';
+import 'src/presentation/providers/product_provider.dart';
 import 'src/presentation/screens/main_navigation.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        Provider<ApiService>(
+          create: (_) => ApiService(),
+        ),
+        ProxyProvider<ApiService, CategoryRepository>(
+          update: (_, apiService, __) => CategoryRepository(apiService: apiService),
+        ),
+        ProxyProvider<ApiService, ProductRepository>(
+          update: (_, apiService, __) => ProductRepository(apiService: apiService),
+        ),
+        ChangeNotifierProxyProvider<CategoryRepository, CategoryProvider>(
+          create: (_) => CategoryProvider(repository: CategoryRepository(apiService: ApiService())),
+          update: (_, repo, previous) => CategoryProvider(repository: repo),
+        ),
+        ChangeNotifierProxyProvider<ProductRepository, ProductProvider>(
+          create: (_) => ProductProvider(repository: ProductRepository(apiService: ApiService())),
+          update: (_, repo, previous) => ProductProvider(repository: repo),
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -11,14 +41,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Your App Name',
+      title: 'Baibazar App',
       theme: ThemeData(
         primarySwatch: Colors.green,
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: Colors.green,
-          selectedItemColor: Colors.green,
-          unselectedItemColor: Colors.green,
-        ),
       ),
       home: const MainNavigation(),
     );

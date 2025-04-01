@@ -1,33 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'package:baibazar_app/src/presentation/providers/category_provider.dart';
+import 'package:baibazar_app/src/data/models/category_model.dart';
 import 'package:baibazar_app/src/presentation/providers/product_provider.dart';
-import 'package:baibazar_app/src/presentation/widgets/category_item.dart';
-import 'package:baibazar_app/src/presentation/widgets/product_card.dart';
 import 'package:baibazar_app/src/presentation/screens/product_opened_page.dart';
+import 'package:baibazar_app/src/presentation/widgets/product_card.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+class CategoryOpenedPage extends StatefulWidget {
+  final CategoryModel category;
+
+  const CategoryOpenedPage({Key? key, required this.category}) : super(key: key);
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<CategoryOpenedPage> createState() => _CategoryOpenedPageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _CategoryOpenedPageState extends State<CategoryOpenedPage> {
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(() async {
-      await context.read<CategoryProvider>().loadCategories();
-      final categories = context.read<CategoryProvider>().categories;
-      if (categories.isNotEmpty) {
-        context.read<ProductProvider>().loadProductsByTag(categories.first.title);
-      } else {
-        context.read<ProductProvider>().loadProducts();
-      }
+    Future.microtask(() {
+      context.read<ProductProvider>().loadProductsByTag(widget.category.title);
     });
   }
 
@@ -39,14 +34,36 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final categoryProvider = context.watch<CategoryProvider>();
     final productProvider = context.watch<ProductProvider>();
-    final categories = categoryProvider.categories;
     final products = productProvider.products;
-    final isLoadingProducts = productProvider.isLoading;
-    final isLoadingCategories = categoryProvider.isLoading;
+    final isLoading = productProvider.isLoading;
 
     return Scaffold(
+      appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Material(
+            color: Colors.grey[300],
+            shape: const CircleBorder(),
+            child: IconButton(
+              icon: SvgPicture.asset(
+                'assets/ic_arrow_back.svg',
+                width: 24,
+                height: 24,
+              ),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+        ),
+        centerTitle: true,
+        title: const Text(
+          'Каталог',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        foregroundColor: Colors.black,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -81,38 +98,16 @@ class _HomePageState extends State<HomePage> {
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Категории',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(
-                height: 106,
-                child: isLoadingCategories
-                    ? const Center(child: CircularProgressIndicator())
-                    : ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: categories.length,
-                  itemBuilder: (context, index) {
-                    final category = categories[index];
-                    return GestureDetector(
-                      onTap: () {
-                        productProvider.loadProductsByTag(category.title);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: CategoryItem(
-                          imageUrl: category.image,
-                          title: category.title,
-                        ),
+                child: Row(
+                  children: [
+                    Text(
+                      widget.category.title,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
                       ),
-                    );
-                  },
+                    ),
+                  ],
                 ),
               ),
               Padding(
@@ -130,9 +125,10 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         Text(
                           productProvider.sortByNewest ? 'Новые' : 'Старые',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                         IconButton(
                           onPressed: () {
@@ -149,7 +145,7 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
               ),
-              if (isLoadingProducts)
+              if (isLoading)
                 const Center(child: CircularProgressIndicator())
               else
                 GridView.builder(
@@ -165,9 +161,8 @@ class _HomePageState extends State<HomePage> {
                   ),
                   itemBuilder: (context, index) {
                     final product = products[index];
-                    final imageUrl = product.images.isNotEmpty
-                        ? product.images.first
-                        : '';
+                    final imageUrl =
+                    product.images.isNotEmpty ? product.images.first : '';
                     return ProductCard(
                       title: product.title,
                       price: '${product.price}c',

@@ -1,27 +1,70 @@
-import 'package:baibazar_app/src/presentation/screens/profile_authorized_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
+
+import '../../core/api/api_service.dart';
+import 'main_navigation.dart';
 
 class ProfileDataPage extends StatefulWidget {
-  const ProfileDataPage({Key? key}) : super(key: key);
+  final String phone;
+  const ProfileDataPage({Key? key, required this.phone}) : super(key: key);
 
   @override
   State<ProfileDataPage> createState() => _ProfileDataPageState();
 }
 
 class _ProfileDataPageState extends State<ProfileDataPage> {
-  final TextEditingController surnameController = TextEditingController();
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController patronymicController = TextEditingController();
+  final _surname    = TextEditingController();
+  final _name       = TextEditingController();
+  final _patronymic = TextEditingController();
+  bool _loading = false;
 
-  bool get isAllFilled {
-    return surnameController.text.isNotEmpty &&
-        nameController.text.isNotEmpty &&
-        patronymicController.text.isNotEmpty;
+  bool get _filled =>
+      _surname.text.isNotEmpty &&
+          _name.text.isNotEmpty &&
+          _patronymic.text.isNotEmpty;
+
+  Future<void> _finish() async {
+    final api = context.read<ApiService>();
+
+    setState(() => _loading = true);
+
+    await api.init();
+
+    try {
+      await api.updateProfile({
+        'first_name': _name.text,
+        'middle_name': _patronymic.text,
+        'last_name': _surname.text,
+        'phonenumber': widget.phone,
+      });
+
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const MainNavigation(initialIndex: 3),
+        ),
+            (_) => false,
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    InputBorder border(TextEditingController c) => OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(
+        color: c.text.isNotEmpty ? const Color(0xFF148A09) : Colors.grey,
+      ),
+    );
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -55,90 +98,59 @@ class _ProfileDataPageState extends State<ProfileDataPage> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
             children: [
               const SizedBox(height: 24),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'Войти в приложение',
-                            style: TextStyle(
-                              fontFamily: 'Gilroy',
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Добро пожаловать в Bai Bazar! Для\nтого, чтобы совершать заказы вам\nнужно войти',
-                            style: TextStyle(
-                              fontFamily: 'Gilroy',
-                              fontSize: 14,
-                              color: Color(0xFF707070),
-                              height: 1.3,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+
+              _field(
+                label: 'Фамилия',
+                c: _surname,
+                border: border(_surname),
+              ),
+              const SizedBox(height: 16),
+
+              _field(
+                label: 'Имя',
+                c: _name,
+                border: border(_name),
+              ),
+              const SizedBox(height: 16),
+
+              _field(
+                label: 'Отчество',
+                c: _patronymic,
+                border: border(_patronymic),
               ),
               const SizedBox(height: 32),
-              _buildLabel('Фамилия'),
-              const SizedBox(height: 6),
-              _buildTextField(surnameController),
-              const SizedBox(height: 16),
-              _buildLabel('Имя'),
-              const SizedBox(height: 6),
-              _buildTextField(nameController),
-              const SizedBox(height: 16),
-              _buildLabel('Отчество'),
-              const SizedBox(height: 6),
-              _buildTextField(patronymicController),
-              const SizedBox(height: 32),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: SizedBox(
-                  height: 48,
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isAllFilled ? const Color(0xFF148A09) : Colors.grey,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+
+              SizedBox(
+                height: 48,
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _filled
+                        ? const Color(0xFF148A09)
+                        : Colors.grey,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    onPressed: isAllFilled ? () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(builder:(_)=>
-                          const ProfileAuthorizedPage())
-                      );
-                    } : null,
-                    child: const Text(
-                      'Завершить регистрацию',
-                      style: TextStyle(
-                        fontFamily: 'Gilroy',
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
+                  ),
+                  onPressed: _filled && !_loading ? _finish : null,
+                  child: _loading
+                      ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
+                  )
+                      : const Text(
+                    'Завершить регистрацию',
+                    style: TextStyle(
+                      fontFamily: 'Gilroy',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -151,50 +163,28 @@ class _ProfileDataPageState extends State<ProfileDataPage> {
     );
   }
 
-  Widget _buildLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          text,
-          style: TextStyle(
-            fontFamily: 'Gilroy',
-            fontSize: 14,
-            color: Colors.black.withOpacity(0.7),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField(TextEditingController controller) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        height: 48,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: controller.text.isNotEmpty ? const Color(0xFF148A09) : Colors.grey,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.only(left: 12),
-          child: TextField(
-            controller: controller,
-            style: const TextStyle(
+  Widget _field({
+    required String label,
+    required TextEditingController c,
+    required InputBorder border,
+  }) =>
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
               fontFamily: 'Gilroy',
-              fontSize: 16,
+              fontSize: 14,
+              color: Colors.black.withOpacity(0.7),
             ),
-            decoration: const InputDecoration(
-              hintText: 'Напишите...',
-              border: InputBorder.none,
-            ),
+          ),
+          const SizedBox(height: 6),
+          TextField(
+            controller: c,
+            decoration: InputDecoration(border: border),
             onChanged: (_) => setState(() {}),
           ),
-        ),
-      ),
-    );
-  }
+        ],
+      );
 }

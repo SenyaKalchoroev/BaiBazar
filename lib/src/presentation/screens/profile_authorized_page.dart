@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:baibazar_app/src/presentation/screens/my_orders_page.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../../core/api/api_service.dart';
+import 'my_orders_page.dart';
+import 'main_navigation.dart';
 
 class ProfileAuthorizedPage extends StatefulWidget {
   const ProfileAuthorizedPage({Key? key}) : super(key: key);
@@ -9,6 +13,33 @@ class ProfileAuthorizedPage extends StatefulWidget {
 }
 
 class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
+  Map<String, dynamic>? _profile;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final api = context.read<ApiService>();
+    try {
+      await api.init();
+      final data = await api.getProfile();
+      setState(() {
+        _profile = data;
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,27 +58,34 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
         foregroundColor: Colors.black,
         elevation: 0,
       ),
-      body: Column(
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+          ? Center(child: Text('Ошибка: $_error'))
+          : Column(
         children: [
           Container(
             width: double.infinity,
             color: const Color(0xFFF5F5F5),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
-                  'Маликов Эрмек Мирланович',
-                  style: TextStyle(
+                  '${_profile!['last_name']} '
+                      '${_profile!['first_name']} '
+                      '${_profile!['middle_name']}',
+                  style: const TextStyle(
                     fontFamily: 'Gilroy',
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
-                  '+996 (706)-100-876',
-                  style: TextStyle(
+                  _profile!['phonenumber'] as String,
+                  style: const TextStyle(
                     fontFamily: 'Gilroy',
                     fontWeight: FontWeight.w400,
                     fontSize: 14,
@@ -77,7 +115,8 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const MyOrdersPage()),
+                MaterialPageRoute(
+                    builder: (_) => const MyOrdersPage()),
               );
             },
           ),
@@ -89,7 +128,8 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
           ),
           const Spacer(),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 16),
             child: SizedBox(
               height: 48,
               width: double.infinity,
@@ -100,7 +140,15 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                onPressed: () {},
+                onPressed: () {
+                  context.read<ApiService>().clearToken();
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) =>
+                        const MainNavigation(initialIndex: 0)),
+                  );
+                },
                 child: const Text(
                   'Выйти',
                   style: TextStyle(
@@ -120,12 +168,8 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
   }
 
   Widget _buildProfileOption(
-      BuildContext context,
-      String text,
-      String iconPath, {
-        Color iconColor = Colors.green,
-        VoidCallback? onTap,
-      }) {
+      BuildContext context, String text, String iconPath,
+      {Color iconColor = Colors.green, VoidCallback? onTap}) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       height: 52,
@@ -160,8 +204,10 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
                     ? Padding(
                   padding: const EdgeInsets.all(8),
                   child: iconColor == Colors.red
-                      ? Icon(Icons.g_translate, color: Colors.red, size: 16)
-                      : Image.asset(iconPath, width: 16, height: 16),
+                      ? Icon(Icons.g_translate,
+                      color: Colors.red, size: 16)
+                      : SvgPicture.asset(iconPath,
+                      width: 16, height: 16),
                 )
                     : const SizedBox.shrink(),
               ),
@@ -178,9 +224,7 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) {
-        return const EditPersonalDataSheet();
-      },
+      builder: (_) => const EditPersonalDataSheet(),
     );
   }
 
@@ -189,12 +233,11 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) {
-        return const ChangePhoneNumberSheet();
-      },
+      builder: (_) => const ChangePhoneNumberSheet(),
     );
   }
 }
+
 
 class EditPersonalDataSheet extends StatefulWidget {
   const EditPersonalDataSheet({Key? key}) : super(key: key);

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "487672783451",
+    "project_id": "baibazar-auth",
+    "storage_bucket": "baibazar-auth.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:487672783451:android:05a18d14ec0e285b74557e",
+        "android_client_info": {
+          "package_name": "com.example.baibazar_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyClbXGdigvQkhEthOnt_T-nP7d4ghoCgf0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

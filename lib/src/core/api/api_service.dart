@@ -7,7 +7,6 @@ class ApiService {
 
   String? _token;
 
-  /// Загружает сохранённый токен (если есть).
   Future<void> init() async {
     final sp = await SharedPreferences.getInstance();
     _token = sp.getString('bb_token');

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 import 'src/core/api/api_service.dart';
 import 'src/data/repositories/category_repository.dart';
@@ -7,9 +8,14 @@ import 'src/data/repositories/products_repository.dart';
 import 'src/presentation/providers/category_provider.dart';
 import 'src/presentation/providers/product_provider.dart';
 import 'src/presentation/screens/main_navigation.dart';
+import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   final apiService = ApiService();
   await apiService.init();
@@ -18,14 +24,12 @@ void main() async {
     MultiProvider(
       providers: [
         Provider<ApiService>.value(value: apiService),
-
         ProxyProvider<ApiService, CategoryRepository>(
           update: (_, api, __) => CategoryRepository(apiService: api),
         ),
         ProxyProvider<ApiService, ProductRepository>(
           update: (_, api, __) => ProductRepository(apiService: api),
         ),
-
         ChangeNotifierProxyProvider<CategoryRepository, CategoryProvider>(
           create: (_) =>
               CategoryProvider(repository: CategoryRepository(apiService: apiService)),

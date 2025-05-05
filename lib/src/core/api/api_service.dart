@@ -82,18 +82,18 @@ class ApiService {
     _check(res);
   }
 
-  Future<List<dynamic>> getCart() async {
+  Future<Map<String, dynamic>> getCartWithMeta() async {
     final res = await http.get(
       Uri.parse('$_base/cart/'),
       headers: _headers(),
     );
     _check(res);
-    return json.decode(res.body) as List<dynamic>;
+    return json.decode(res.body) as Map<String, dynamic>;
   }
 
-  Future<void> clearCart() async {
+  Future<void> deleteCartItem(int cartId) async {
     final res = await http.delete(
-      Uri.parse('$_base/cart/'),
+      Uri.parse('$_base/cart/?cart_id=$cartId'),
       headers: _headers(),
     );
     _check(res);

@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-
 import 'package:baibazar_app/src/presentation/providers/product_provider.dart';
 import 'package:baibazar_app/src/data/models/product_model.dart';
-import 'package:baibazar_app/src/presentation/screens/cart_page.dart';
-
 import '../providers/cart_provider.dart';
+import 'main_navigation.dart';
 
 class ProductOpenedPage extends StatefulWidget {
   final int productId;
@@ -244,9 +242,12 @@ class _ProductOpenedPageState extends State<ProductOpenedPage> {
                 ),
                 onPressed: () async {
                   await context.read<CartProvider>().addToCart(widget.productId);
-                  Navigator.push(
+                  Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(builder: (_) => const CartPage()),
+                    MaterialPageRoute(
+                      builder: (_) => const MainNavigation(initialIndex: 2),
+                    ),
+                        (route) => false,
                   );
                 },
                 child: Row(

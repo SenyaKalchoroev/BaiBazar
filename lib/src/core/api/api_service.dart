@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   static const _base = 'https://baibazar.pp.ua/api/v1';
-
   String? _token;
 
   Future<void> init() async {
@@ -26,55 +25,10 @@ class ApiService {
     await sp.remove('bb_token');
   }
 
-  Map<String, String> _headers({bool auth = true}) {
-    return {
-      'Content-Type': 'application/json',
-      if (auth && _token != null) 'Authorization': 'Bearer $_token',
-    };
-  }
-
-  Future<dynamic> _get(String path) async {
-    final res = await http.get(
-      Uri.parse('$_base$path'),
-      headers: _headers(auth: true),
-    );
-    _check(res);
-    return json.decode(res.body);
-  }
-
-  Future<dynamic> _post(String path, Map body, {bool auth = true}) async {
-    final res = await http.post(
-      Uri.parse('$_base$path'),
-      headers: _headers(auth: auth),
-      body: json.encode(body),
-    );
-    _check(res);
-    return json.decode(res.body);
-  }
-
-  Future<dynamic> _put(String path, Map body) async {
-    final url = '$_base$path';
-    final headers = _headers(auth: true);
-    final payload = json.encode(body);
-
-    print('>> PUT URL     = $url');
-    print('>> PUT TOKEN   = $_token');
-    print('>> PUT HEADERS = $headers');
-    print('>> PUT BODY    = $payload');
-
-    final res = await http.put(
-      Uri.parse(url),
-      headers: headers,
-      body: payload,
-    );
-
-    print('>> PUT RESP_CODE = ${res.statusCode}');
-    print('>> PUT RESP_BODY = ${res.body}');
-
-    _check(res);
-    return json.decode(res.body);
-  }
-
+  Map<String, String> _headers({bool auth = true}) => {
+    'Content-Type': 'application/json',
+    if (auth && _token != null) 'Authorization': 'Bearer $_token',
+  };
 
   void _check(http.Response r) {
     if (r.statusCode != 200 && r.statusCode != 201) {
@@ -82,38 +36,102 @@ class ApiService {
     }
   }
 
-  Future<void> registerPhone(String phone) =>
-      _post('/user/register/', {'phonenumber': phone}, auth: false);
-
-  Future<void> verifyCode(String phone, String code) async {
-    final res = await _post(
-      '/user/verify/',
-      {'phonenumber': phone, 'otp_code': code},
-      auth: false,
-    ) as Map<String, dynamic>;
-    await _saveToken(res['access_token'] as String);
+  Future<void> registerAuthenticate({
+    required String idToken,
+    required String phone,
+  }) async {
+    final res = await http.post(
+      Uri.parse('$_base/user/register-authenticate/'),
+      headers: _headers(auth: false),
+      body: json.encode({
+        'id_token': idToken,
+        'phonenumber': phone,
+      }),
+    );
+    _check(res);
+    final body = json.decode(res.body) as Map<String, dynamic>;
+    await _saveToken(body['access_token'] as String);
   }
 
   Future<Map<String, dynamic>> getProfile() async {
-    final res = await _get('/user/profile/');
-    return res as Map<String, dynamic>;
+    final res = await http.get(
+      Uri.parse('$_base/user/profile/'),
+      headers: _headers(),
+    );
+    _check(res);
+    final body = json.decode(res.body) as Map<String, dynamic>;
+    return (body['data'] as Map<String, dynamic>);
   }
 
-  Future<Map<String, dynamic>> updateProfile(
-      Map<String, dynamic> data) async {
-    final res = await _put('/user/profile/', data);
-    return res as Map<String, dynamic>;
+
+  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> d) async {
+    final res = await http.put(
+      Uri.parse('$_base/user/profile/'),
+      headers: _headers(),
+      body: json.encode(d),
+    );
+    _check(res);
+    return json.decode(res.body) as Map<String, dynamic>;
   }
 
-  Future<List<dynamic>> getCategories() async =>
-      await _get('/product/category/') as List;
+  Future<void> addToCart(int productId) async {
+    final res = await http.post(
+      Uri.parse('$_base/cart/?product_id=$productId'),
+      headers: _headers(),
+    );
+    _check(res);
+  }
 
-  Future<List<dynamic>> getProducts() async =>
-      await _get('/product/') as List;
+  Future<List<dynamic>> getCart() async {
+    final res = await http.get(
+      Uri.parse('$_base/cart/'),
+      headers: _headers(),
+    );
+    _check(res);
+    return json.decode(res.body) as List<dynamic>;
+  }
 
-  Future<List<dynamic>> getProductsByTag(String tag) async =>
-      await _get('/product/?tag=$tag') as List;
+  Future<void> clearCart() async {
+    final res = await http.delete(
+      Uri.parse('$_base/cart/'),
+      headers: _headers(),
+    );
+    _check(res);
+  }
 
-  Future<Map<String, dynamic>> getProductById(int id) async =>
-      await _get('/product/$id/') as Map<String, dynamic>;
+  Future<List<dynamic>> getCategories() async {
+    final res = await http.get(
+      Uri.parse('$_base/product/category/'),
+      headers: _headers(),
+    );
+    _check(res);
+    return json.decode(res.body) as List<dynamic>;
+  }
+
+  Future<List<dynamic>> getProducts() async {
+    final res = await http.get(
+      Uri.parse('$_base/product/'),
+      headers: _headers(),
+    );
+    _check(res);
+    return json.decode(res.body) as List<dynamic>;
+  }
+
+  Future<List<dynamic>> getProductsByTag(String tag) async {
+    final res = await http.get(
+      Uri.parse('$_base/product/?tag=$tag'),
+      headers: _headers(),
+    );
+    _check(res);
+    return json.decode(res.body) as List<dynamic>;
+  }
+
+  Future<Map<String, dynamic>> getProductById(int id) async {
+    final res = await http.get(
+      Uri.parse('$_base/product/$id/'),
+      headers: _headers(),
+    );
+    _check(res);
+    return json.decode(res.body) as Map<String, dynamic>;
+  }
 }

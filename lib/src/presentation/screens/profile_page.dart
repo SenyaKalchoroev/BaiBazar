@@ -1,9 +1,12 @@
+// lib/src/presentation/screens/profile_page.dart
+
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/api/api_service.dart';
 import 'code_input_page.dart';
+import 'profile_data_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -13,32 +16,59 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final TextEditingController _phoneController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _auth = FirebaseAuth.instance;
   bool _loading = false;
 
-  bool get _valid => _phoneController.text.length == 9; // 996 XXX XXXX
+  bool get _valid => _phoneController.text.length == 9;  // XXX XXXX
 
   Future<void> _sendPhone() async {
-    final api = context.read<ApiService>();
     final phone = '+996${_phoneController.text}';
-
     setState(() => _loading = true);
-    try {
-      await api.registerPhone(phone);
-      if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => CodeInputPage(phone: phone),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка: $e')),
-      );
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
+
+    await _auth.verifyPhoneNumber(
+      phoneNumber: phone,
+      timeout: const Duration(seconds: 60),
+
+      verificationCompleted: (PhoneAuthCredential cred) async {
+        try {
+          final u = await _auth.signInWithCredential(cred);
+          final idToken = await u.user!.getIdToken();
+          await context.read<ApiService>().registerAuthenticate(
+            idToken: idToken!,
+            phone: phone,
+          );
+          if (!mounted) return;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const ProfileDataPage()),
+          );
+        } catch (_) {
+        }
+      },
+
+      verificationFailed: (e) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Ошибка: ${e.message}')));
+      },
+
+      codeSent: (verificationId, _) {
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CodeInputPage(
+              phone: phone,
+              verificationId: verificationId,
+            ),
+          ),
+        );
+      },
+
+      codeAutoRetrievalTimeout: (_) {},
+    );
+
+    if (mounted) setState(() => _loading = false);
   }
 
   @override
@@ -53,9 +83,10 @@ class _ProfilePageState extends State<ProfilePage> {
               const Text(
                 'Авторизация',
                 style: TextStyle(
-                    fontFamily: 'Gilroy',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18),
+                  fontFamily: 'Gilroy',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
               ),
               const SizedBox(height: 24),
               Padding(
@@ -108,8 +139,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   height: 48,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    border:
-                    Border.all(color: _valid ? Colors.green : Colors.grey),
+                    border: Border.all(color: _valid ? Colors.green : Colors.grey),
                   ),
                   child: Row(
                     children: [
@@ -154,9 +184,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           width: 88,
                           height: double.infinity,
                           decoration: BoxDecoration(
-                            color: _valid
-                                ? const Color(0xFF148A09)
-                                : Colors.grey,
+                            color: _valid ? const Color(0xFF148A09) : Colors.grey,
                             borderRadius: const BorderRadius.only(
                               topRight: Radius.circular(12),
                               bottomRight: Radius.circular(12),
@@ -168,7 +196,9 @@ class _ProfilePageState extends State<ProfilePage> {
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white),
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
                                 : const Text(
                               'Далее',
@@ -186,6 +216,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),

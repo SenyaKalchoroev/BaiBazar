@@ -6,6 +6,8 @@ import 'package:baibazar_app/src/presentation/providers/product_provider.dart';
 import 'package:baibazar_app/src/data/models/product_model.dart';
 import 'package:baibazar_app/src/presentation/screens/cart_page.dart';
 
+import '../providers/cart_provider.dart';
+
 class ProductOpenedPage extends StatefulWidget {
   final int productId;
 
@@ -240,7 +242,8 @@ class _ProductOpenedPageState extends State<ProductOpenedPage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                onPressed: () {
+                onPressed: () async {
+                  await context.read<CartProvider>().addToCart(widget.productId);
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const CartPage()),

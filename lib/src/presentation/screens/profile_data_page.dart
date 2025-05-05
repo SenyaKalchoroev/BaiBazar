@@ -1,3 +1,5 @@
+// lib/src/presentation/screens/profile_data_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -6,8 +8,7 @@ import '../../core/api/api_service.dart';
 import 'main_navigation.dart';
 
 class ProfileDataPage extends StatefulWidget {
-  final String phone;
-  const ProfileDataPage({Key? key, required this.phone}) : super(key: key);
+  const ProfileDataPage({Key? key}) : super(key: key);
 
   @override
   State<ProfileDataPage> createState() => _ProfileDataPageState();
@@ -25,32 +26,16 @@ class _ProfileDataPageState extends State<ProfileDataPage> {
           _patronymic.text.isNotEmpty;
 
   Future<void> _finish() async {
-    final api = context.read<ApiService>();
-
     setState(() => _loading = true);
-
-    await api.init();
-
     try {
-      await api.updateProfile({
-        'first_name': _name.text,
+      await context.read<ApiService>().updateProfile({
+        'first_name':  _name.text,
         'middle_name': _patronymic.text,
-        'last_name': _surname.text,
-        'phonenumber': widget.phone,
+        'last_name':   _surname.text,
       });
-
-      if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const MainNavigation(initialIndex: 3),
-        ),
-            (_) => false,
-      );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Ошибка: $e')));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -64,6 +49,28 @@ class _ProfileDataPageState extends State<ProfileDataPage> {
         color: c.text.isNotEmpty ? const Color(0xFF148A09) : Colors.grey,
       ),
     );
+
+    Widget field(String label, TextEditingController ctl) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Gilroy',
+              fontSize: 14,
+              color: Colors.black.withOpacity(0.7),
+            ),
+          ),
+          const SizedBox(height: 6),
+          TextField(
+            controller: ctl,
+            decoration: InputDecoration(border: border(ctl)),
+            onChanged: (_) => setState(() {}),
+          ),
+        ],
+      );
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -102,31 +109,15 @@ class _ProfileDataPageState extends State<ProfileDataPage> {
           child: Column(
             children: [
               const SizedBox(height: 24),
-
-              _field(
-                label: 'Фамилия',
-                c: _surname,
-                border: border(_surname),
-              ),
+              field('Фамилия', _surname),
               const SizedBox(height: 16),
-
-              _field(
-                label: 'Имя',
-                c: _name,
-                border: border(_name),
-              ),
+              field('Имя', _name),
               const SizedBox(height: 16),
-
-              _field(
-                label: 'Отчество',
-                c: _patronymic,
-                border: border(_patronymic),
-              ),
+              field('Отчество', _patronymic),
               const SizedBox(height: 32),
-
               SizedBox(
-                height: 48,
                 width: double.infinity,
+                height: 48,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _filled
@@ -136,7 +127,22 @@ class _ProfileDataPageState extends State<ProfileDataPage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: _filled && !_loading ? _finish : null,
+                  onPressed: _filled && !_loading
+                      ? () async {
+                    // 1) Обновляем профиль (Bearer-токен уже установлен)
+                    await _finish();
+                    if (!mounted) return;
+                    // 2) Переходим в основное приложение
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                        const MainNavigation(initialIndex: 3),
+                      ),
+                          (_) => false,
+                    );
+                  }
+                      : null,
                   child: _loading
                       ? const SizedBox(
                     width: 20,
@@ -162,29 +168,4 @@ class _ProfileDataPageState extends State<ProfileDataPage> {
       ),
     );
   }
-
-  Widget _field({
-    required String label,
-    required TextEditingController c,
-    required InputBorder border,
-  }) =>
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Gilroy',
-              fontSize: 14,
-              color: Colors.black.withOpacity(0.7),
-            ),
-          ),
-          const SizedBox(height: 6),
-          TextField(
-            controller: c,
-            decoration: InputDecoration(border: border),
-            onChanged: (_) => setState(() {}),
-          ),
-        ],
-      );
 }

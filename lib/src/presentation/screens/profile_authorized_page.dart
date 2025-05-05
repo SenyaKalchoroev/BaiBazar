@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:developer' as developer;
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../core/api/api_service.dart';
 import 'my_orders_page.dart';
@@ -28,11 +29,15 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
     try {
       await api.init();
       final data = await api.getProfile();
+      print('🛰 Получен профиль: $data');
+      developer.log('🛰 Получен профиль: $data ',name: 'CodeInputPage');
       setState(() {
         _profile = data;
         _loading = false;
       });
     } catch (e) {
+      print('❌ Ошибка при получении profile: $e');
+      developer.log('🛰 Получен профиль: $e ',name: 'CodeInputPage');
       setState(() {
         _error = e.toString();
         _loading = false;
@@ -40,8 +45,25 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_error != null) {
+      return Scaffold(
+        body: Center(child: Text('Ошибка: $_error')),
+      );
+    }
+
+    final lastName   = (_profile?['last_name']   ?? '').toString();
+    final firstName  = (_profile?['first_name']  ?? '').toString();
+    final middleName = (_profile?['middle_name'] ?? '').toString();
+    final phone      = (_profile?['phonenumber'] ?? '').toString();
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -58,24 +80,17 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
         foregroundColor: Colors.black,
         elevation: 0,
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-          ? Center(child: Text('Ошибка: $_error'))
-          : Column(
+      body: Column(
         children: [
           Container(
             width: double.infinity,
             color: const Color(0xFFF5F5F5),
-            padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${_profile!['last_name']} '
-                      '${_profile!['first_name']} '
-                      '${_profile!['middle_name']}',
+                  '$lastName $firstName $middleName',
                   style: const TextStyle(
                     fontFamily: 'Gilroy',
                     fontWeight: FontWeight.w600,
@@ -84,7 +99,7 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _profile!['phonenumber'] as String,
+                  phone.isNotEmpty ? phone : '—',
                   style: const TextStyle(
                     fontFamily: 'Gilroy',
                     fontWeight: FontWeight.w400,
@@ -112,13 +127,10 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
             context,
             'Мои заказы',
             'assets/ic_my_orders.svg',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const MyOrdersPage()),
-              );
-            },
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MyOrdersPage()),
+            ),
           ),
           _buildProfileOption(
             context,
@@ -128,8 +140,7 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
           ),
           const Spacer(),
           Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: SizedBox(
               height: 48,
               width: double.infinity,
@@ -144,9 +155,7 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
                   context.read<ApiService>().clearToken();
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(
-                        builder: (_) =>
-                        const MainNavigation(initialIndex: 0)),
+                    MaterialPageRoute(builder: (_) => const MainNavigation(initialIndex: 0)),
                   );
                 },
                 child: const Text(
@@ -204,10 +213,8 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
                     ? Padding(
                   padding: const EdgeInsets.all(8),
                   child: iconColor == Colors.red
-                      ? Icon(Icons.g_translate,
-                      color: Colors.red, size: 16)
-                      : SvgPicture.asset(iconPath,
-                      width: 16, height: 16),
+                      ? Icon(Icons.g_translate, color: iconColor, size: 16)
+                      : SvgPicture.asset(iconPath, width: 16, height: 16),
                 )
                     : const SizedBox.shrink(),
               ),
@@ -217,6 +224,7 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
         ),
       ),
     );
+
   }
 
   void _showEditPersonalDataSheet(BuildContext context) {

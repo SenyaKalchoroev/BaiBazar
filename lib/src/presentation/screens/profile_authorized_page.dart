@@ -4,6 +4,7 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/api/api_service.dart';
 import 'my_orders_page.dart';
@@ -113,7 +114,6 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
           ),
           const SizedBox(height: 16),
 
-          // Edit personal data
           _buildProfileOption(
             'Редактировать личные данные',
             'assets/ic_edit.svg',
@@ -135,16 +135,22 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
             'Сменить номер телефона',
             'assets/ic_phone.svg',
             onTap: () async {
-              final updated = await showModalBottomSheet<bool>(
+              final entered = await showModalBottomSheet<bool>(
                 context: context,
                 isScrollControlled: true,
                 backgroundColor: Colors.transparent,
-                builder: (_) => ChangePhoneNumberSheet(
-                  currentPhone: phone,
-                ),
+                builder: (_) => ChangePhoneNumberSheet(currentPhone: phone),
               );
-              if (updated == true) {
-                _loadProfile();
+              if (entered == true) {
+                final result = await showModalBottomSheet<Map<String,String>>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => ChangePhoneNumberCodeSheet(),
+                );
+                if (result != null && result['verified'] == 'true') {
+                  _loadProfile();
+                }
               }
             },
           ),
@@ -206,12 +212,8 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
     );
   }
 
-  Widget _buildProfileOption(
-      String text,
-      String iconPath, {
-        Color iconColor = Colors.green,
-        VoidCallback? onTap,
-      }) {
+  Widget _buildProfileOption(String text, String iconPath,
+      {Color iconColor = Colors.green, VoidCallback? onTap}) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       height: 52,
@@ -225,22 +227,12 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
         child: Row(
           children: [
             const SizedBox(width: 16),
-            Text(
-              text,
-              style: const TextStyle(
-                fontFamily: 'Gilroy',
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            Text(text, style: const TextStyle(fontFamily: 'Gilroy', fontSize: 14, fontWeight: FontWeight.w500)),
             const Spacer(),
             Container(
               width: 36,
               height: 36,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-              ),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
               child: Center(
                 child: iconColor == Colors.red
                     ? Icon(Icons.g_translate, color: iconColor, size: 16)
@@ -254,7 +246,6 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
     );
   }
 }
-
 class EditPersonalDataSheet extends StatefulWidget {
   final Map<String, dynamic> profile;
   const EditPersonalDataSheet({Key? key, required this.profile}) : super(key: key);
@@ -402,8 +393,6 @@ class _EditPersonalDataSheetState extends State<EditPersonalDataSheet> {
     );
   }
 }
-
-/// Bottom sheet for changing phone number
 class ChangePhoneNumberSheet extends StatefulWidget {
   final String currentPhone;
   const ChangePhoneNumberSheet({Key? key, required this.currentPhone}) : super(key: key);
@@ -414,108 +403,99 @@ class ChangePhoneNumberSheet extends StatefulWidget {
 
 class _ChangePhoneNumberSheetState extends State<ChangePhoneNumberSheet> {
   late final TextEditingController phoneController;
+  String? _verificationId;
+  bool _sending = false;
 
   @override
   void initState() {
     super.initState();
     phoneController = TextEditingController(text: widget.currentPhone);
   }
+  @override
+  void dispose() {
+    phoneController.dispose();
+    super.dispose();
+  }
 
-  bool get isFilled => phoneController.text.isNotEmpty;
+  bool get isFilled => phoneController.text.trim().isNotEmpty;
+
+  Future<void> _sendSms() async {
+    setState(() => _sending = true);
+    await FirebaseAuth.instance.verifyPhoneNumber(
+      phoneNumber: phoneController.text.trim(),
+      verificationCompleted: (_) {},
+      verificationFailed: (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка отправки кода: ${e.message}')));
+        setState(() => _sending = false);
+      },
+      codeSent: (verId, _) {
+        _verificationId = verId;
+        setState(() => _sending = false);
+        Navigator.pop(context, true);
+      },
+      codeAutoRetrievalTimeout: (_) {},
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return DraggableScrollableSheet(
-      initialChildSize: 0.3,
-      minChildSize: 0.2,
-      maxChildSize: 0.8,
-      builder: (_, scrollCtrl) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-        ),
+      initialChildSize: 0.3, minChildSize: 0.2, maxChildSize: 0.8,
+      builder: (_, scroll) => Container(
+        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
         child: SingleChildScrollView(
-          controller: scrollCtrl,
-          padding: EdgeInsets.only(left: 16, right: 16, top: 16, bottom: bottomInset),
+          controller: scroll,
+          padding: EdgeInsets.only(left:16, right:16, top:16, bottom:bottomInset),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Container(
-                  width: 50, height: 5,
-                  decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Center(
-                child: Text(
-                  'Сменить номер телефона',
-                  style: TextStyle(fontFamily: 'Gilroy', fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text('Новый номер телефона', style: TextStyle(fontFamily: 'Gilroy', fontSize: 14, color: Colors.black54)),
-              const SizedBox(height: 6),
+              Center(child: Container(width:50, height:5, decoration: BoxDecoration(color:Colors.grey[400], borderRadius: BorderRadius.circular(8)))),
+              const SizedBox(height:12),
+              const Center(child: Text('Сменить номер телефона', style: TextStyle(fontFamily:'Gilroy', fontWeight:FontWeight.bold, fontSize:16))),
+              const SizedBox(height:16),
+              const Text('Новый номер телефона', style: TextStyle(fontFamily:'Gilroy', fontSize:14, color:Colors.black54)),
+              const SizedBox(height:6),
               Container(
-                height: 48,
+                height:48,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: isFilled ? const Color(0xFF148A09) : Colors.grey),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 12),
+                  padding: const EdgeInsets.only(left:12),
                   child: TextField(
                     controller: phoneController,
                     keyboardType: TextInputType.phone,
-                    style: const TextStyle(fontFamily: 'Gilroy', fontSize: 16),
-                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'Напишите...'),
+                    style: const TextStyle(fontFamily:'Gilroy', fontSize:16),
+                    decoration: const InputDecoration(border: InputBorder.none),
                     onChanged: (_) => setState(() {}),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height:24),
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(48),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
+                      style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                       onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Отмена', style: TextStyle(fontFamily: 'Gilroy', fontSize: 16, color: Colors.black)),
+                      child: const Text('Отмена', style: TextStyle(fontFamily:'Gilroy', fontSize:16, color:Colors.black)),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width:12),
                   Expanded(
                     child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(48),
-                        backgroundColor: isFilled ? const Color(0xFF148A09) : Colors.grey,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      onPressed: isFilled
-                          ? () {
-                        Navigator.pop(context, true);
-                        showModalBottomSheet<bool>(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (_) => ChangePhoneNumberCodeSheet(newPhoneNumber: phoneController.text),
-                        ).then((ok) {
-                          if (ok == true) {
-                            Navigator.pop(context, true);
-                          }
-                        });
-                      }
-                          : null,
-                      child: const Text('Далее', style: TextStyle(fontFamily: 'Gilroy', fontSize: 16, color: Colors.white, fontWeight: FontWeight.w600)),
+                      style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(48), backgroundColor: isFilled ? const Color(0xFF148A09) : Colors.grey, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                      onPressed: isFilled && !_sending ? _sendSms : null,
+                      child: _sending
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('Далее', style: TextStyle(fontFamily:'Gilroy', fontSize:16, color:Colors.white, fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height:24),
             ],
           ),
         ),
@@ -525,108 +505,79 @@ class _ChangePhoneNumberSheetState extends State<ChangePhoneNumberSheet> {
 }
 
 class ChangePhoneNumberCodeSheet extends StatefulWidget {
-  final String newPhoneNumber;
-  const ChangePhoneNumberCodeSheet({Key? key, required this.newPhoneNumber}) : super(key: key);
+  const ChangePhoneNumberCodeSheet({Key? key}) : super(key: key);
 
   @override
   State<ChangePhoneNumberCodeSheet> createState() => _ChangePhoneNumberCodeSheetState();
 }
 
 class _ChangePhoneNumberCodeSheetState extends State<ChangePhoneNumberCodeSheet> {
-  final List<TextEditingController> _codeControllers =
-  List.generate(6, (_) => TextEditingController());
+  final List<TextEditingController> _codeCtrls = List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
+  bool _verifying = false;
 
-  bool get isAllFilled => _codeControllers.every((c) => c.text.isNotEmpty);
+  bool get isAllFilled => _codeCtrls.every((c) => c.text.isNotEmpty);
+  String get _smsCode => _codeCtrls.map((c) => c.text).join();
 
   @override
   void dispose() {
-    for (final c in _codeControllers) c.dispose();
-    for (final f in _focusNodes) f.dispose();
+    for (var c in _codeCtrls) c.dispose();
+    for (var f in _focusNodes) f.dispose();
     super.dispose();
+  }
+
+  Future<void> _verify() async {
+    final api = context.read<ApiService>();
+    setState(() => _verifying = true);
+    try {
+      final args = ModalRoute.of(context)!.settings.arguments as Map<String, String>;
+      final verId = args['verificationId']!;
+      final newNumber = args['newPhone']!;
+      final cred = PhoneAuthProvider.credential(verificationId: verId, smsCode: _smsCode);
+      await FirebaseAuth.instance.currentUser!.updatePhoneNumber(cred);
+      await api.updateProfile({'phonenumber': newNumber});
+      Navigator.pop(context, {'verified':'true'});
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка верификации: $e')));
+      setState(() => _verifying = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    final api = context.read<ApiService>();
-
     return DraggableScrollableSheet(
-      initialChildSize: 0.5, // чуть выше открывается
-      minChildSize: 0.3,
-      maxChildSize: 0.8,
-      builder: (_, scrollCtrl) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-        ),
+      initialChildSize: 0.5, minChildSize: 0.3, maxChildSize: 0.8,
+      builder: (_, scroll) => Container(
+        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
         child: SingleChildScrollView(
-          controller: scrollCtrl,
-          padding: EdgeInsets.only(left: 16, right: 16, top: 16, bottom: bottomInset),
+          controller: scroll,
+          padding: EdgeInsets.only(left:16, right:16, top:16, bottom:bottomInset),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Container(
-                  width: 50, height: 5,
-                  decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Center(
-                child: Text(
-                  'Сменить номер телефона',
-                  style: TextStyle(fontFamily: 'Gilroy', fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Код из SMS на номер ${widget.newPhoneNumber}',
-                style: const TextStyle(fontFamily: 'Gilroy', fontSize: 14, color: Colors.black54),
-              ),
-              const SizedBox(height: 12),
-
-              // OTP input boxes centered
+              Center(child: Container(width:50, height:5, decoration: BoxDecoration(color:Colors.grey[400], borderRadius: BorderRadius.circular(8)))),
+              const SizedBox(height:12),
+              const Center(child: Text('Сменить номер телефона', style: TextStyle(fontFamily:'Gilroy', fontWeight:FontWeight.bold, fontSize:16))),
+              const SizedBox(height:16),
+              const SizedBox(height:12),
               Center(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(6, (index) => _buildCodeBox(index)),
+                  children: List.generate(6, (i) => _buildBox(i)),
                 ),
               ),
-
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  const Text('Не пришел код?', style: TextStyle(fontFamily: 'Gilroy', fontSize: 14)),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text('Повторить', style: TextStyle(fontFamily: 'Gilroy', fontSize: 14, color: Colors.green)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
+              const SizedBox(height:12),
               SizedBox(
                 height: 48,
                 width: double.infinity,
                 child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isAllFilled ? const Color(0xFF148A09) : Colors.grey,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: isAllFilled
-                      ? () async {
-                    await api.updateProfile({'phonenumber': widget.newPhoneNumber});
-                    Navigator.pop(context, true);
-                  }
-                      : null,
-                  child: const Text(
-                    'Подтвердить',
-                    style: TextStyle(fontFamily: 'Gilroy', fontWeight: FontWeight.w600, fontSize: 16, color: Colors.white),
-                  ),
+                  style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), backgroundColor: isAllFilled ? const Color(0xFF148A09) : Colors.grey),
+                  onPressed: isAllFilled && !_verifying ? _verify : null,
+                  child: _verifying ? const CircularProgressIndicator(color: Colors.white) : const Text('Подтвердить', style: TextStyle(fontFamily:'Gilroy', fontWeight:FontWeight.w600, fontSize:16, color:Colors.white)),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height:24),
             ],
           ),
         ),
@@ -634,32 +585,24 @@ class _ChangePhoneNumberCodeSheetState extends State<ChangePhoneNumberCodeSheet>
     );
   }
 
-  Widget _buildCodeBox(int index) {
+  Widget _buildBox(int index) {
     return Container(
-      width: 48, height: 48,
-      margin: EdgeInsets.only(right: index < 5 ? 8 : 0),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: _codeControllers[index].text.isNotEmpty ? const Color(0xFF148A09) : Colors.grey),
-      ),
+      width:48, height:48, margin: EdgeInsets.only(right: index<5?8:0),
+      decoration: BoxDecoration(border: Border.all(color: _codeCtrls[index].text.isNotEmpty ? const Color(0xFF148A09) : Colors.grey), borderRadius: BorderRadius.circular(8)),
       child: TextField(
-        controller: _codeControllers[index],
+        controller: _codeCtrls[index],
         focusNode: _focusNodes[index],
         keyboardType: TextInputType.number,
         textAlign: TextAlign.center,
         maxLength: 1,
-        style: const TextStyle(fontFamily: 'Gilroy', fontSize: 16),
         decoration: const InputDecoration(border: InputBorder.none, counterText: ''),
-        onChanged: (value) {
-          if (value.length == 1 && index < 5) {
-            _focusNodes[index + 1].requestFocus();
-          } else if (value.isEmpty && index > 0) {
-            _focusNodes[index - 1].requestFocus();
-          }
-          setState(() {});
+        style: const TextStyle(fontFamily:'Gilroy', fontSize:16),
+        onChanged: (v) {
+          if (v.length==1 && index<5) _focusNodes[index+1].requestFocus();
+          if (v.isEmpty && index>0)   _focusNodes[index-1].requestFocus();
+          setState((){});
         },
       ),
     );
   }
 }
-

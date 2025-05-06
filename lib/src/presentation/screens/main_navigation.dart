@@ -56,6 +56,7 @@ class _MainNavigationState extends State<MainNavigation> {
         currentIndex: _current,
         selectedItemColor: Colors.black,
         unselectedItemColor: Colors.black,
+        backgroundColor: Colors.white,
         onTap: (i) => setState(() => _current = i),
         items: [
           _item('assets/ic_home.svg', 'Главная'),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+
 import 'package:baibazar_app/src/presentation/providers/category_provider.dart';
 import 'package:baibazar_app/src/presentation/providers/product_provider.dart';
 import 'package:baibazar_app/src/presentation/widgets/category_item.dart';
@@ -40,38 +41,34 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final categoryProvider = context.watch<CategoryProvider>();
-    final productProvider = context.watch<ProductProvider>();
-    final categories = categoryProvider.categories;
-    final products = productProvider.products;
-    final isLoadingProducts = productProvider.isLoading;
-    final isLoadingCategories = categoryProvider.isLoading;
+    final productProvider  = context.watch<ProductProvider>();
+    final categories       = categoryProvider.categories;
+    final products         = productProvider.products;
+    final isLoadingCats    = categoryProvider.isLoading;
+    final isLoadingProds   = productProvider.isLoading;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             children: [
+              // Поиск
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: TextField(
                   controller: _searchController,
-                  onChanged: (value) {
-                    productProvider.searchProducts(value);
-                  },
+                  onChanged: (v) => productProvider.searchProducts(v),
                   style: const TextStyle(color: Color(0xFF707070)),
                   decoration: InputDecoration(
                     hintText: 'Поиск',
                     hintStyle: const TextStyle(color: Color(0xFF808080)),
                     prefixIcon: Padding(
                       padding: const EdgeInsets.all(12),
-                      child: SvgPicture.asset(
-                        'assets/ic_search.svg',
-                        width: 24,
-                        height: 24,
-                      ),
+                      child: SvgPicture.asset('assets/ic_search.svg', width: 24, height: 24),
                     ),
-                    fillColor: const Color(0xFFEBEBEB),
                     filled: true,
+                    fillColor: const Color(0xFFEBEBEB),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -79,42 +76,44 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
+
+              // Категории
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'Категории',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
               SizedBox(
                 height: 106,
-                child: isLoadingCategories
+                child: isLoadingCats
                     ? const Center(child: CircularProgressIndicator())
                     : ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: categories.length,
-                  itemBuilder: (context, index) {
-                    final category = categories[index];
-                    return GestureDetector(
-                      onTap: () {
-                        productProvider.loadProductsByTag(category.title);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 8),
+                  itemBuilder: (ctx, i) {
+                    final c = categories[i];
+                    return Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: GestureDetector(
+                        onTap: () => productProvider.loadProductsByTag(c.title),
                         child: CategoryItem(
-                          imageUrl: category.image,
-                          title: category.title,
+                          imageUrl: c.image,
+                          title:    c.title,
                         ),
                       ),
                     );
                   },
                 ),
               ),
+
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
@@ -122,62 +121,56 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     Text(
                       'Продукты',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleLarge
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     Row(
                       children: [
                         Text(
                           productProvider.sortByNewest ? 'Новые' : 'Старые',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                         IconButton(
-                          onPressed: () {
-                            productProvider.toggleSortByDate();
-                          },
-                          icon: SvgPicture.asset(
-                            'assets/ic_filter_product.svg',
-                            width: 24,
-                            height: 24,
-                          ),
+                          onPressed: productProvider.toggleSortByDate,
+                          icon: SvgPicture.asset('assets/ic_filter_product.svg', width: 24, height: 24),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-              if (isLoadingProducts)
+
+              if (isLoadingProds)
                 const Center(child: CircularProgressIndicator())
               else
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: products.length,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: products.length,
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
-                    childAspectRatio: 152 / 188,
+                    childAspectRatio: 120 / 168,
                   ),
-                  itemBuilder: (context, index) {
-                    final product = products[index];
-                    final imageUrl = product.images.isNotEmpty
-                        ? product.images.first
-                        : '';
+                  itemBuilder: (ctx, i) {
+                    final p = products[i];
+                    final img = p.images.isNotEmpty ? p.images.first : '';
                     return ProductCard(
-                      title: product.title,
-                      price: '${product.price}c',
-                      imageUrl: imageUrl,
-                      onTap: () {
+                      title:    p.title,
+                      price:    '${p.price}c',
+                      imageUrl: img,
+                      onTap:    () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) =>
-                                ProductOpenedPage(productId: product.id),
+                            builder: (_) => ProductOpenedPage(productId: p.id),
                           ),
                         );
                       },

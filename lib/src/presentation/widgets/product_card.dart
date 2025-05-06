@@ -6,7 +6,6 @@ class ProductCard extends StatelessWidget {
   final String imageUrl;
   final VoidCallback? onTap;
 
-
   const ProductCard({
     Key? key,
     required this.title,
@@ -20,68 +19,69 @@ class ProductCard extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        width: 152,
-        height: 188,
+        width: double.infinity,
+        height: 158,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: const Color(0xFFEBEBEB),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Stack(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClipRRect(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: ClipRRect(
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(12),
                       topRight: Radius.circular(12),
                     ),
                     child: Image.network(
                       imageUrl,
+                      width: double.infinity,
                       height: 110,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          height: 110,
-                          color: Colors.grey[300],
-                          child: const Icon(Icons.image_not_supported),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Text(
-                      title,
-                      style: const TextStyle(
-                        fontFamily: 'Gilroy',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Text(
-                      'Цена за 1кг',
-                      style: TextStyle(
-                        fontFamily: 'Gilroy',
-                        fontWeight: FontWeight.w400,
-                        fontSize: 13,
-                        color: Colors.grey[700],
+                      errorBuilder: (ctx, err, stack) => Container(
+                        width: double.infinity,
+                        height: 110,
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.image_not_supported),
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontFamily: 'Gilroy',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,  // увеличили
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Text(
+                    'Цена за 1кг',
+                    style: TextStyle(
+                      fontFamily: 'Gilroy',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 15,  // чуть больше
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ),
+              ],
             ),
+
             Positioned(
               left: 10,
               bottom: 4,
@@ -89,9 +89,9 @@ class ProductCard extends StatelessWidget {
                 price,
                 style: const TextStyle(
                   fontFamily: 'Gilroy',
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                  color: Colors.green,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,  // увеличили
+                  color: Color(0xFF0A6800),
                 ),
               ),
             ),

@@ -110,20 +110,17 @@ class _CartPageState extends State<CartPage> {
               maxChildSize: 0.35,
               builder:
                   (ctx, scroll) => Material(
-                    elevation: 4,
-                    // добавляем рамку и скругление
                     shape: const RoundedRectangleBorder(
                       borderRadius: BorderRadius.vertical(
                         top: Radius.circular(12),
                       ),
-                      side: BorderSide(color: Color(0xFFE0E0E0), width: 1),
+                      side: BorderSide(color: Color(0xFFE0E0E0), width: 0.4),
                     ),
                     color: Colors.white, // #FFFFFF
                     child: SingleChildScrollView(
                       controller: scroll,
                       child: Column(
                         children: [
-                          // «гребёнка»
                           Container(
                             margin: const EdgeInsets.only(top: 8),
                             width: 50,

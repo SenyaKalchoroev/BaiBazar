@@ -1,7 +1,8 @@
+import 'package:baibazar_app/src/data/repositories/order_repository.dart';
+import 'package:baibazar_app/src/presentation/providers/order_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-
 import 'firebase_options.dart';
 import 'src/core/api/api_service.dart';
 import 'src/data/repositories/category_repository.dart';
@@ -47,6 +48,13 @@ void main() async {
         ChangeNotifierProvider<CartProvider>(
           create: (ctx) =>
               CartProvider(CartRepository(ctx.read<ApiService>())),
+        ),
+        ProxyProvider<ApiService, OrderRepository>(
+          update: (_, api, __) => OrderRepository(api),
+        ),
+        ChangeNotifierProxyProvider<OrderRepository, OrderProvider>(
+          create: (ctx) => OrderProvider(ctx.read<OrderRepository>()),
+          update: (_, repo, __) => OrderProvider(repo),
         ),
       ],
       child: const MyApp(),

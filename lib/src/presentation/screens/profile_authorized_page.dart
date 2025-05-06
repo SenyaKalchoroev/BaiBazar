@@ -1,7 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+// lib/src/presentation/screens/profile_authorized_page.dart
+
 import 'dart:developer' as developer;
+import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
+
 import '../../core/api/api_service.dart';
 import 'my_orders_page.dart';
 import 'main_navigation.dart';
@@ -25,19 +28,21 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
   }
 
   Future<void> _loadProfile() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
     final api = context.read<ApiService>();
     try {
       await api.init();
       final data = await api.getProfile();
-      print('🛰 Получен профиль: $data');
-      developer.log('🛰 Получен профиль: $data ',name: 'CodeInputPage');
+      developer.log('🛰 Profile loaded: $data', name: 'Profile');
       setState(() {
         _profile = data;
         _loading = false;
       });
     } catch (e) {
-      print('❌ Ошибка при получении profile: $e');
-      developer.log('🛰 Получен профиль: $e ',name: 'CodeInputPage');
       setState(() {
         _error = e.toString();
         _loading = false;
@@ -45,24 +50,19 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (_error != null) {
-      return Scaffold(
-        body: Center(child: Text('Ошибка: $_error')),
-      );
+      return Scaffold(body: Center(child: Text('Ошибка: $_error')));
     }
 
-    final lastName   = (_profile?['last_name']   ?? '').toString();
-    final firstName  = (_profile?['first_name']  ?? '').toString();
-    final middleName = (_profile?['middle_name'] ?? '').toString();
-    final phone      = (_profile?['phonenumber'] ?? '').toString();
+    final lastName   = (_profile!['last_name']   ?? '').toString();
+    final firstName  = (_profile!['first_name']  ?? '').toString();
+    final middleName = (_profile!['middle_name'] ?? '').toString();
+    final phone      = (_profile!['phonenumber'] ?? '').toString();
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -82,6 +82,7 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
       ),
       body: Column(
         children: [
+          // header with name + phone
           Container(
             width: double.infinity,
             color: const Color(0xFFF5F5F5),
@@ -111,20 +112,45 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
             ),
           ),
           const SizedBox(height: 16),
+
+          // Edit personal data
           _buildProfileOption(
-            context,
             'Редактировать личные данные',
             'assets/ic_edit.svg',
-            onTap: () => _showEditPersonalDataSheet(context),
+            onTap: () async {
+              final updated = await showModalBottomSheet<bool>(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => EditPersonalDataSheet(profile: _profile!),
+              );
+              if (updated == true) {
+                _loadProfile();
+              }
+            },
           ),
+
+          // Change phone number
           _buildProfileOption(
-            context,
             'Сменить номер телефона',
             'assets/ic_phone.svg',
-            onTap: () => _showChangePhoneNumberSheet(context),
+            onTap: () async {
+              final updated = await showModalBottomSheet<bool>(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => ChangePhoneNumberSheet(
+                  currentPhone: phone,
+                ),
+              );
+              if (updated == true) {
+                _loadProfile();
+              }
+            },
           ),
+
+          // My orders
           _buildProfileOption(
-            context,
             'Мои заказы',
             'assets/ic_my_orders.svg',
             onTap: () => Navigator.push(
@@ -132,13 +158,19 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
               MaterialPageRoute(builder: (_) => const MyOrdersPage()),
             ),
           ),
+
           _buildProfileOption(
-            context,
             'Сменить язык',
             'assets/ic_kg_language.svg',
             iconColor: Colors.red,
+            onTap: () {
+              // TODO: implement language switching
+            },
           ),
+
           const Spacer(),
+
+          // Logout
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: SizedBox(
@@ -147,9 +179,7 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFE5E5E5),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () {
                   context.read<ApiService>().clearToken();
@@ -177,8 +207,11 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
   }
 
   Widget _buildProfileOption(
-      BuildContext context, String text, String iconPath,
-      {Color iconColor = Colors.green, VoidCallback? onTap}) {
+      String text,
+      String iconPath, {
+        Color iconColor = Colors.green,
+        VoidCallback? onTap,
+      }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       height: 52,
@@ -209,14 +242,9 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Center(
-                child: iconPath.isNotEmpty
-                    ? Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: iconColor == Colors.red
-                      ? Icon(Icons.g_translate, color: iconColor, size: 16)
-                      : SvgPicture.asset(iconPath, width: 16, height: 16),
-                )
-                    : const SizedBox.shrink(),
+                child: iconColor == Colors.red
+                    ? Icon(Icons.g_translate, color: iconColor, size: 16)
+                    : SvgPicture.asset(iconPath, width: 16, height: 16),
               ),
             ),
             const SizedBox(width: 12),
@@ -224,195 +252,150 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
         ),
       ),
     );
-
-  }
-
-  void _showEditPersonalDataSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => const EditPersonalDataSheet(),
-    );
-  }
-
-  void _showChangePhoneNumberSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => const ChangePhoneNumberSheet(),
-    );
   }
 }
 
-
 class EditPersonalDataSheet extends StatefulWidget {
-  const EditPersonalDataSheet({Key? key}) : super(key: key);
+  final Map<String, dynamic> profile;
+  const EditPersonalDataSheet({Key? key, required this.profile}) : super(key: key);
 
   @override
   State<EditPersonalDataSheet> createState() => _EditPersonalDataSheetState();
 }
 
 class _EditPersonalDataSheetState extends State<EditPersonalDataSheet> {
-  final TextEditingController surnameController = TextEditingController(text: 'Маликов');
-  final TextEditingController nameController = TextEditingController(text: 'Эрмек');
-  final TextEditingController patronymicController = TextEditingController(text: 'Мирланович');
+  late final TextEditingController surnameController;
+  late final TextEditingController nameController;
+  late final TextEditingController patronymicController;
 
-  bool get isAllFilled {
-    return surnameController.text.isNotEmpty &&
-        nameController.text.isNotEmpty &&
-        patronymicController.text.isNotEmpty;
+  @override
+  void initState() {
+    super.initState();
+    surnameController    = TextEditingController(text: widget.profile['last_name']   as String? ?? '');
+    nameController       = TextEditingController(text: widget.profile['first_name']  as String? ?? '');
+    patronymicController = TextEditingController(text: widget.profile['middle_name'] as String? ?? '');
   }
+
+  bool get isAllFilled =>
+      surnameController.text.isNotEmpty &&
+          nameController.text.isNotEmpty &&
+          patronymicController.text.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final api = context.read<ApiService>();
+
     return DraggableScrollableSheet(
       initialChildSize: 0.5,
       minChildSize: 0.3,
       maxChildSize: 0.8,
-      builder: (BuildContext context, ScrollController scrollController) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-          ),
-          child: SingleChildScrollView(
-            controller: scrollController,
-            padding: EdgeInsets.only(
-              left: 16,
-              right: 16,
-              top: 16,
-              bottom: bottomInset,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 50,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[400],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+      builder: (_, scrollCtrl) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+        ),
+        child: SingleChildScrollView(
+          controller: scrollCtrl,
+          padding: EdgeInsets.only(left: 16, right: 16, top: 16, bottom: bottomInset),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 50, height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[400],
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                const SizedBox(height: 12),
-                const Center(
-                  child: Text(
-                    'Редактировать личные данные',
-                    style: TextStyle(
-                      fontFamily: 'Gilroy',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+              ),
+              const SizedBox(height: 12),
+              const Center(
+                child: Text(
+                  'Редактировать личные данные',
+                  style: TextStyle(
+                    fontFamily: 'Gilroy',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
                 ),
-                const SizedBox(height: 16),
-                _buildLabel('Фамилия'),
-                const SizedBox(height: 6),
-                _buildTextField(surnameController),
-                const SizedBox(height: 12),
-                _buildLabel('Имя'),
-                const SizedBox(height: 6),
-                _buildTextField(nameController),
-                const SizedBox(height: 12),
-                _buildLabel('Отчество'),
-                const SizedBox(height: 6),
-                _buildTextField(patronymicController),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 48,
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text(
-                            'Отмена',
-                            style: TextStyle(
-                              fontFamily: 'Gilroy',
-                              fontSize: 16,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: SizedBox(
-                        height: 48,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                            isAllFilled ? const Color(0xFF148A09) : Colors.grey,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: isAllFilled ? () => Navigator.pop(context) : null,
-                          child: const Text(
-                            'Сохранить',
-                            style: TextStyle(
-                              fontFamily: 'Gilroy',
-                              fontSize: 16,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+              ),
+              const SizedBox(height: 16),
 
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: TextStyle(
-        fontFamily: 'Gilroy',
-        fontSize: 14,
-        color: Colors.black.withOpacity(0.7),
+              const Text('Фамилия', style: TextStyle(fontFamily: 'Gilroy', fontSize: 14, color: Colors.black54)),
+              const SizedBox(height: 6),
+              _buildTextField(surnameController),
+
+              const SizedBox(height: 12),
+              const Text('Имя', style: TextStyle(fontFamily: 'Gilroy', fontSize: 14, color: Colors.black54)),
+              const SizedBox(height: 6),
+              _buildTextField(nameController),
+
+              const SizedBox(height: 12),
+              const Text('Отчество', style: TextStyle(fontFamily: 'Gilroy', fontSize: 14, color: Colors.black54)),
+              const SizedBox(height: 6),
+              _buildTextField(patronymicController),
+
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Отмена', style: TextStyle(fontFamily: 'Gilroy', fontSize: 16, color: Colors.black)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        backgroundColor: isAllFilled ? const Color(0xFF148A09) : Colors.grey,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: isAllFilled
+                          ? () async {
+                        await api.updateProfile({
+                          'last_name':   surnameController.text,
+                          'first_name':  nameController.text,
+                          'middle_name': patronymicController.text,
+                        });
+                        Navigator.pop(context, true);
+                      }
+                          : null,
+                      child: const Text('Сохранить',
+                        style: TextStyle(fontFamily: 'Gilroy', fontSize: 16, color: Colors.white, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildTextField(TextEditingController controller) {
+  Widget _buildTextField(TextEditingController c) {
     return Container(
       height: 48,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: controller.text.isNotEmpty ? const Color(0xFF148A09) : Colors.grey,
-        ),
+        border: Border.all(color: c.text.isNotEmpty ? const Color(0xFF148A09) : Colors.grey),
       ),
       child: Padding(
         padding: const EdgeInsets.only(left: 12),
         child: TextField(
-          controller: controller,
-          style: const TextStyle(
-            fontFamily: 'Gilroy',
-            fontSize: 16,
-          ),
-          decoration: const InputDecoration(
-            border: InputBorder.none,
-          ),
+          controller: c,
+          style: const TextStyle(fontFamily: 'Gilroy', fontSize: 16),
+          decoration: const InputDecoration(border: InputBorder.none),
           onChanged: (_) => setState(() {}),
         ),
       ),
@@ -420,15 +403,24 @@ class _EditPersonalDataSheetState extends State<EditPersonalDataSheet> {
   }
 }
 
+/// Bottom sheet for changing phone number
 class ChangePhoneNumberSheet extends StatefulWidget {
-  const ChangePhoneNumberSheet({Key? key}) : super(key: key);
+  final String currentPhone;
+  const ChangePhoneNumberSheet({Key? key, required this.currentPhone}) : super(key: key);
 
   @override
   State<ChangePhoneNumberSheet> createState() => _ChangePhoneNumberSheetState();
 }
 
 class _ChangePhoneNumberSheetState extends State<ChangePhoneNumberSheet> {
-  final TextEditingController phoneController = TextEditingController();
+  late final TextEditingController phoneController;
+
+  @override
+  void initState() {
+    super.initState();
+    phoneController = TextEditingController(text: widget.currentPhone);
+  }
+
   bool get isFilled => phoneController.text.isNotEmpty;
 
   @override
@@ -438,151 +430,95 @@ class _ChangePhoneNumberSheetState extends State<ChangePhoneNumberSheet> {
       initialChildSize: 0.3,
       minChildSize: 0.2,
       maxChildSize: 0.8,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-          ),
-          child: SingleChildScrollView(
-            controller: scrollController,
-            padding: EdgeInsets.only(
-              left: 16,
-              right: 16,
-              top: 16,
-              bottom: bottomInset,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 50,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[400],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+      builder: (_, scrollCtrl) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+        ),
+        child: SingleChildScrollView(
+          controller: scrollCtrl,
+          padding: EdgeInsets.only(left: 16, right: 16, top: 16, bottom: bottomInset),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 50, height: 5,
+                  decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Center(
+                child: Text(
+                  'Сменить номер телефона',
+                  style: TextStyle(fontFamily: 'Gilroy', fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text('Новый номер телефона', style: TextStyle(fontFamily: 'Gilroy', fontSize: 14, color: Colors.black54)),
+              const SizedBox(height: 6),
+              Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: isFilled ? const Color(0xFF148A09) : Colors.grey),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 12),
+                  child: TextField(
+                    controller: phoneController,
+                    keyboardType: TextInputType.phone,
+                    style: const TextStyle(fontFamily: 'Gilroy', fontSize: 16),
+                    decoration: const InputDecoration(border: InputBorder.none, hintText: 'Напишите...'),
+                    onChanged: (_) => setState(() {}),
                   ),
                 ),
-                const SizedBox(height: 12),
-                const Center(
-                  child: Text(
-                    'Сменить номер телефона',
-                    style: TextStyle(
-                      fontFamily: 'Gilroy',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Новый номер телефона',
-                  style: TextStyle(
-                    fontFamily: 'Gilroy',
-                    fontSize: 14,
-                    color: Colors.black54,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  height: 48,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isFilled ? const Color(0xFF148A09) : Colors.grey,
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 12),
-                    child: TextField(
-                      controller: phoneController,
-                      keyboardType: TextInputType.phone,
-                      style: const TextStyle(
-                        fontFamily: 'Gilroy',
-                        fontSize: 16,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      decoration: const InputDecoration(
-                        hintText: 'Напишите...',
-                        border: InputBorder.none,
-                      ),
-                      onChanged: (_) => setState(() {}),
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Отмена', style: TextStyle(fontFamily: 'Gilroy', fontSize: 16, color: Colors.black)),
                     ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 48,
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text(
-                            'Отмена',
-                            style: TextStyle(
-                              fontFamily: 'Gilroy',
-                              fontSize: 16,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        backgroundColor: isFilled ? const Color(0xFF148A09) : Colors.grey,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: SizedBox(
-                        height: 48,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                            isFilled ? const Color(0xFF148A09) : Colors.grey,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: isFilled
-                              ? () {
-                            Navigator.pop(context);
-                            _showChangePhoneCodeSheet(context);
+                      onPressed: isFilled
+                          ? () {
+                        Navigator.pop(context, true);
+                        showModalBottomSheet<bool>(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => ChangePhoneNumberCodeSheet(newPhoneNumber: phoneController.text),
+                        ).then((ok) {
+                          if (ok == true) {
+                            Navigator.pop(context, true);
                           }
-                              : null,
-                          child: const Text(
-                            'Далее',
-                            style: TextStyle(
-                              fontFamily: 'Gilroy',
-                              fontSize: 16,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
+                        });
+                      }
+                          : null,
+                      child: const Text('Далее', style: TextStyle(fontFamily: 'Gilroy', fontSize: 16, color: Colors.white, fontWeight: FontWeight.w600)),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-              ],
-            ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+            ],
           ),
-        );
-      },
-    );
-  }
-
-  void _showChangePhoneCodeSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => ChangePhoneNumberCodeSheet(
-        newPhoneNumber: phoneController.text,
+        ),
       ),
     );
   }
@@ -599,167 +535,131 @@ class ChangePhoneNumberCodeSheet extends StatefulWidget {
 class _ChangePhoneNumberCodeSheetState extends State<ChangePhoneNumberCodeSheet> {
   final List<TextEditingController> _codeControllers =
   List.generate(6, (_) => TextEditingController());
+  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
   bool get isAllFilled => _codeControllers.every((c) => c.text.isNotEmpty);
 
   @override
+  void dispose() {
+    for (final c in _codeControllers) c.dispose();
+    for (final f in _focusNodes) f.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final api = context.read<ApiService>();
+
     return DraggableScrollableSheet(
-      initialChildSize: 0.4,
+      initialChildSize: 0.5, // чуть выше открывается
       minChildSize: 0.3,
       maxChildSize: 0.8,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-          ),
-          child: SingleChildScrollView(
-            controller: scrollController,
-            padding: EdgeInsets.only(
-              left: 16,
-              right: 16,
-              top: 16,
-              bottom: bottomInset,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 50,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[400],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+      builder: (_, scrollCtrl) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+        ),
+        child: SingleChildScrollView(
+          controller: scrollCtrl,
+          padding: EdgeInsets.only(left: 16, right: 16, top: 16, bottom: bottomInset),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 50, height: 5,
+                  decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(8)),
                 ),
-                const SizedBox(height: 12),
-                const Center(
-                  child: Text(
-                    'Сменить номер телефона',
-                    style: TextStyle(
-                      fontFamily: 'Gilroy',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
+              ),
+              const SizedBox(height: 12),
+              const Center(
+                child: Text(
+                  'Сменить номер телефона',
+                  style: TextStyle(fontFamily: 'Gilroy', fontWeight: FontWeight.bold, fontSize: 16),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Код из SMS на номер ${widget.newPhoneNumber}',
-                  style: const TextStyle(
-                    fontFamily: 'Gilroy',
-                    fontSize: 14,
-                    color: Colors.black54,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Код из SMS на номер ${widget.newPhoneNumber}',
+                style: const TextStyle(fontFamily: 'Gilroy', fontSize: 14, color: Colors.black54),
+              ),
+              const SizedBox(height: 12),
+
+              // OTP input boxes centered
+              Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(6, (index) => _buildCodeBox(index)),
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    const Text(
-                      'Не пришел код?',
-                      style: TextStyle(
-                        fontFamily: 'Gilroy',
-                        fontSize: 14,
-                      ),
-                    ),
-                    const Spacer(),
-                    TextButton(
-                      onPressed: () {},
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Text(
-                            'Повторить через ',
-                            style: TextStyle(
-                              fontFamily: 'Gilroy',
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          Text(
-                            '01:20',
-                            style: TextStyle(
-                              fontFamily: 'Gilroy',
-                              fontSize: 14,
-                              color: Colors.green,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 48,
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                      isAllFilled ? const Color(0xFF148A09) : Colors.grey,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: isAllFilled ? () => Navigator.pop(context) : null,
-                    child: const Text(
-                      'Подтвердить',
-                      style: TextStyle(
-                        fontFamily: 'Gilroy',
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
-                    ),
+              ),
+
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Text('Не пришел код?', style: TextStyle(fontFamily: 'Gilroy', fontSize: 14)),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () {},
+                    child: const Text('Повторить', style: TextStyle(fontFamily: 'Gilroy', fontSize: 14, color: Colors.green)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 48,
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isAllFilled ? const Color(0xFF148A09) : Colors.grey,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: isAllFilled
+                      ? () async {
+                    await api.updateProfile({'phonenumber': widget.newPhoneNumber});
+                    Navigator.pop(context, true);
+                  }
+                      : null,
+                  child: const Text(
+                    'Подтвердить',
+                    style: TextStyle(fontFamily: 'Gilroy', fontWeight: FontWeight.w600, fontSize: 16, color: Colors.white),
                   ),
                 ),
-                const SizedBox(height: 24),
-              ],
-            ),
+              ),
+              const SizedBox(height: 24),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
   Widget _buildCodeBox(int index) {
     return Container(
-      width: 48,
-      height: 48,
+      width: 48, height: 48,
       margin: EdgeInsets.only(right: index < 5 ? 8 : 0),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: _codeControllers[index].text.isNotEmpty
-              ? const Color(0xFF148A09)
-              : Colors.grey,
-        ),
+        border: Border.all(color: _codeControllers[index].text.isNotEmpty ? const Color(0xFF148A09) : Colors.grey),
       ),
-      child: Center(
-        child: TextField(
-          controller: _codeControllers[index],
-          keyboardType: TextInputType.number,
-          textAlign: TextAlign.center,
-          maxLength: 1,
-          style: const TextStyle(
-            fontFamily: 'Gilroy',
-            fontSize: 16,
-          ),
-          decoration: const InputDecoration(
-            border: InputBorder.none,
-            counterText: '',
-          ),
-          onChanged: (_) => setState(() {}),
-        ),
+      child: TextField(
+        controller: _codeControllers[index],
+        focusNode: _focusNodes[index],
+        keyboardType: TextInputType.number,
+        textAlign: TextAlign.center,
+        maxLength: 1,
+        style: const TextStyle(fontFamily: 'Gilroy', fontSize: 16),
+        decoration: const InputDecoration(border: InputBorder.none, counterText: ''),
+        onChanged: (value) {
+          if (value.length == 1 && index < 5) {
+            _focusNodes[index + 1].requestFocus();
+          } else if (value.isEmpty && index > 0) {
+            _focusNodes[index - 1].requestFocus();
+          }
+          setState(() {});
+        },
       ),
     );
   }
 }
+

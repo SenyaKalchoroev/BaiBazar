@@ -46,6 +46,7 @@ class _ProductOpenedPageState extends State<ProductOpenedPage> {
     final product = productProvider.selectedProduct;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         leading: Padding(
           padding: const EdgeInsets.all(8.0),

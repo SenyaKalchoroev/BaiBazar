@@ -54,6 +54,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     final isLoading = categoryProvider.isLoading;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: isLoading
             ? const Center(child: CircularProgressIndicator())

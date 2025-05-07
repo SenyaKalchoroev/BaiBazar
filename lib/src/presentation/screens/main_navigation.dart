@@ -1,6 +1,9 @@
+// lib/src/presentation/screens/main_navigation.dart
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+
 import '../../core/api/api_service.dart';
 import 'categories_page.dart';
 import 'cart_page.dart';
@@ -59,18 +62,24 @@ class _MainNavigationState extends State<MainNavigation> {
         backgroundColor: Colors.white,
         onTap: (i) => setState(() => _current = i),
         items: [
-          _item('assets/ic_home.svg', 'Главная'),
-          _item('assets/ic_category.svg', 'Категории'),
-          _item('assets/ic_cart.svg', 'Корзина'),
-          _item('assets/ic_profile.svg', 'Профиль'),
+          BottomNavigationBarItem(
+            icon: SvgPicture.asset('assets/ic_home.svg', width: 24, height: 24),
+            label: tr('home'),
+          ),
+          BottomNavigationBarItem(
+            icon: SvgPicture.asset('assets/ic_category.svg', width: 24, height: 24),
+            label: tr('categories'),
+          ),
+          BottomNavigationBarItem(
+            icon: SvgPicture.asset('assets/ic_cart.svg', width: 24, height: 24),
+            label: tr('cart'),
+          ),
+          BottomNavigationBarItem(
+            icon: SvgPicture.asset('assets/ic_profile.svg', width: 24, height: 24),
+            label: tr('profile'),
+          ),
         ],
       ),
     );
   }
-
-  BottomNavigationBarItem _item(String asset, String label) =>
-      BottomNavigationBarItem(
-        icon: SvgPicture.asset(asset, width: 24, height: 24),
-        label: label,
-      );
 }

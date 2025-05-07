@@ -1,9 +1,6 @@
-// lib/src/presentation/screens/profile_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
-
 import '../../core/api/api_service.dart';
 import 'code_input_page.dart';
 import 'profile_data_page.dart';
@@ -20,7 +17,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final _auth = FirebaseAuth.instance;
   bool _loading = false;
 
-  bool get _valid => _phoneController.text.length == 9;  // XXX XXXX
+  bool get _valid => _phoneController.text.length == 9;
 
   Future<void> _sendPhone() async {
     final phone = '+996${_phoneController.text}';

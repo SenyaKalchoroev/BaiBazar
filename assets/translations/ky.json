@@ -7,5 +7,10 @@
   "logout": "Чыгуу",
   "search_hint": "Издөө",
   "categories": "Категориялар",
-  "products": "Продуктылар"
+  "products": "Продуктылар",
+  "change_language": "Тилди Алмаштыроо",
+  "ru_language": "Орусча",
+  "kg_language": "Кыргызча",
+  "cart": "Себет"
+
 }

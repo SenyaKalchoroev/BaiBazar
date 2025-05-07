@@ -1,14 +1,14 @@
-// lib/src/presentation/screens/profile_authorized_page.dart
-
 import 'dart:developer' as developer;
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/api/api_service.dart';
 import 'my_orders_page.dart';
 import 'main_navigation.dart';
+
 
 class ProfileAuthorizedPage extends StatefulWidget {
   const ProfileAuthorizedPage({Key? key}) : super(key: key);
@@ -33,9 +33,8 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
       _loading = true;
       _error = null;
     });
-
-    final api = context.read<ApiService>();
     try {
+      final api = context.read<ApiService>();
       await api.init();
       final data = await api.getProfile();
       developer.log('🛰 Profile loaded: $data', name: 'Profile');
@@ -51,13 +50,23 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
     }
   }
 
+  void _showLanguageSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const LanguageSheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (_error != null) {
-      return Scaffold(body: Center(child: Text('Ошибка: $_error')));
+      return Scaffold(
+          body: Center(child: Text('error'.tr(args: [_error!])))
+      );
     }
 
     final lastName   = (_profile!['last_name']   ?? '').toString();
@@ -68,14 +77,7 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          'Профиль',
-          style: TextStyle(
-            fontFamily: 'Gilroy',
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
+        title: const Text('profile').tr(),
         centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -83,7 +85,6 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
       ),
       body: Column(
         children: [
-          // header with name + phone
           Container(
             width: double.infinity,
             color: const Color(0xFFF5F5F5),
@@ -115,8 +116,8 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
           const SizedBox(height: 16),
 
           _buildProfileOption(
-            'Редактировать личные данные',
-            'assets/ic_edit.svg',
+            iconPath: 'assets/ic_edit.svg',
+            textKey: 'edit_data',
             onTap: () async {
               final updated = await showModalBottomSheet<bool>(
                 context: context,
@@ -124,59 +125,50 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
                 backgroundColor: Colors.transparent,
                 builder: (_) => EditPersonalDataSheet(profile: _profile!),
               );
-              if (updated == true) {
-                _loadProfile();
-              }
+              if (updated == true) _loadProfile();
             },
           ),
-
-          // Change phone number
           _buildProfileOption(
-            'Сменить номер телефона',
-            'assets/ic_phone.svg',
+            iconPath: 'assets/ic_phone.svg',
+            textKey: 'change_phone',
             onTap: () async {
-              final entered = await showModalBottomSheet<bool>(
+              final entered = await showModalBottomSheet<_SmsArguments>(
                 context: context,
                 isScrollControlled: true,
                 backgroundColor: Colors.transparent,
                 builder: (_) => ChangePhoneNumberSheet(currentPhone: phone),
               );
-              if (entered == true) {
-                final result = await showModalBottomSheet<Map<String,String>>(
+              if (entered != null) {
+                final verified = await showModalBottomSheet<bool>(
                   context: context,
                   isScrollControlled: true,
                   backgroundColor: Colors.transparent,
-                  builder: (_) => ChangePhoneNumberCodeSheet(),
+                  builder: (_) => ChangePhoneNumberCodeSheet(
+                    verificationId: entered.verificationId,
+                    newPhone: entered.newPhone,
+                  ),
                 );
-                if (result != null && result['verified'] == 'true') {
-                  _loadProfile();
-                }
+                if (verified == true) _loadProfile();
               }
             },
           ),
-
-          // My orders
           _buildProfileOption(
-            'Мои заказы',
-            'assets/ic_my_orders.svg',
+            iconPath: 'assets/ic_my_orders.svg',
+            textKey: 'my_orders',
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const MyOrdersPage()),
             ),
           ),
-
           _buildProfileOption(
-            'Сменить язык',
-            'assets/ic_kg_language.svg',
+            iconPath: 'assets/ic_kg_language.svg',
+            textKey: 'change_language',
             iconColor: Colors.red,
-            onTap: () {
-              // TODO: implement language switching
-            },
+            onTap: _showLanguageSheet,
           ),
 
           const Spacer(),
 
-          // Logout
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: SizedBox(
@@ -185,24 +177,28 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFE5E5E5),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 onPressed: () {
                   context.read<ApiService>().clearToken();
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (_) => const MainNavigation(initialIndex: 0)),
+                    MaterialPageRoute(
+                      builder: (_) => const MainNavigation(initialIndex: 0),
+                    ),
                   );
                 },
                 child: const Text(
-                  'Выйти',
+                  'logout',
                   style: TextStyle(
                     fontFamily: 'Gilroy',
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
                     color: Colors.black,
                   ),
-                ),
+                ).tr(),
               ),
             ),
           ),
@@ -212,8 +208,12 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
     );
   }
 
-  Widget _buildProfileOption(String text, String iconPath,
-      {Color iconColor = Colors.green, VoidCallback? onTap}) {
+  Widget _buildProfileOption({
+    required String iconPath,
+    required String textKey,
+    Color iconColor = Colors.green,
+    required VoidCallback onTap,
+  }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       height: 52,
@@ -227,12 +227,22 @@ class _ProfileAuthorizedPageState extends State<ProfileAuthorizedPage> {
         child: Row(
           children: [
             const SizedBox(width: 16),
-            Text(text, style: const TextStyle(fontFamily: 'Gilroy', fontSize: 14, fontWeight: FontWeight.w500)),
+            Text(
+              textKey,
+              style: const TextStyle(
+                fontFamily: 'Gilroy',
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ).tr(),
             const Spacer(),
             Container(
               width: 36,
               height: 36,
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: Center(
                 child: iconColor == Colors.red
                     ? Icon(Icons.g_translate, color: iconColor, size: 16)
@@ -393,45 +403,50 @@ class _EditPersonalDataSheetState extends State<EditPersonalDataSheet> {
     );
   }
 }
+class _SmsArguments {
+  final String verificationId;
+  final String newPhone;
+  _SmsArguments(this.verificationId, this.newPhone);
+}
 class ChangePhoneNumberSheet extends StatefulWidget {
   final String currentPhone;
   const ChangePhoneNumberSheet({Key? key, required this.currentPhone}) : super(key: key);
-
-  @override
-  State<ChangePhoneNumberSheet> createState() => _ChangePhoneNumberSheetState();
+  @override State<ChangePhoneNumberSheet> createState() => _ChangePhoneNumberSheetState();
 }
-
 class _ChangePhoneNumberSheetState extends State<ChangePhoneNumberSheet> {
-  late final TextEditingController phoneController;
+  late final TextEditingController _ctrl;
   String? _verificationId;
   bool _sending = false;
 
   @override
   void initState() {
     super.initState();
-    phoneController = TextEditingController(text: widget.currentPhone);
+    _ctrl = TextEditingController(text: widget.currentPhone);
   }
   @override
   void dispose() {
-    phoneController.dispose();
+    _ctrl.dispose();
     super.dispose();
   }
 
-  bool get isFilled => phoneController.text.trim().isNotEmpty;
+  bool get _valid => _ctrl.text.trim().isNotEmpty;
 
   Future<void> _sendSms() async {
     setState(() => _sending = true);
+    final phone = _ctrl.text.trim();
     await FirebaseAuth.instance.verifyPhoneNumber(
-      phoneNumber: phoneController.text.trim(),
+      phoneNumber: phone,
+      timeout: const Duration(seconds: 60),
       verificationCompleted: (_) {},
       verificationFailed: (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка отправки кода: ${e.message}')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('sms_error'.tr(args:[e.message!]))));
         setState(() => _sending = false);
       },
       codeSent: (verId, _) {
         _verificationId = verId;
         setState(() => _sending = false);
-        Navigator.pop(context, true);
+        // возвращаем и verificationId, и новый номер
+        Navigator.pop(context, _SmsArguments(verId, phone));
       },
       codeAutoRetrievalTimeout: (_) {},
     );
@@ -439,73 +454,72 @@ class _ChangePhoneNumberSheetState extends State<ChangePhoneNumberSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
     return DraggableScrollableSheet(
       initialChildSize: 0.3, minChildSize: 0.2, maxChildSize: 0.8,
       builder: (_, scroll) => Container(
         decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
         child: SingleChildScrollView(
           controller: scroll,
-          padding: EdgeInsets.only(left:16, right:16, top:16, bottom:bottomInset),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(child: Container(width:50, height:5, decoration: BoxDecoration(color:Colors.grey[400], borderRadius: BorderRadius.circular(8)))),
-              const SizedBox(height:12),
-              const Center(child: Text('Сменить номер телефона', style: TextStyle(fontFamily:'Gilroy', fontWeight:FontWeight.bold, fontSize:16))),
-              const SizedBox(height:16),
-              const Text('Новый номер телефона', style: TextStyle(fontFamily:'Gilroy', fontSize:14, color:Colors.black54)),
-              const SizedBox(height:6),
-              Container(
-                height:48,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isFilled ? const Color(0xFF148A09) : Colors.grey),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.only(left:12),
-                  child: TextField(
-                    controller: phoneController,
-                    keyboardType: TextInputType.phone,
-                    style: const TextStyle(fontFamily:'Gilroy', fontSize:16),
-                    decoration: const InputDecoration(border: InputBorder.none),
-                    onChanged: (_) => setState(() {}),
-                  ),
+          padding: EdgeInsets.only(left:16, right:16, top:16, bottom:bottom),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Center(child: Container(width:50, height:5, decoration: BoxDecoration(color:Colors.grey[400], borderRadius: BorderRadius.circular(8)))),
+            const SizedBox(height:12),
+            const Center(child: Text('change_phone', style: TextStyle(fontFamily:'Gilroy', fontWeight:FontWeight.bold, fontSize:16))),
+            const SizedBox(height:16),
+            const Text('new_phone', style: TextStyle(fontFamily:'Gilroy', fontSize:14, color:Colors.black54)).tr(),
+            const SizedBox(height:6),
+            Container(
+              height:48,
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: _valid ? const Color(0xFF148A09) : Colors.grey)),
+              child: Padding(
+                padding: const EdgeInsets.only(left:12),
+                child: TextField(
+                  controller: _ctrl,
+                  keyboardType: TextInputType.phone,
+                  style: const TextStyle(fontFamily:'Gilroy', fontSize:16),
+                  decoration: const InputDecoration(border: InputBorder.none),
+                  onChanged: (_) => setState((){}),
                 ),
               ),
-              const SizedBox(height:24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Отмена', style: TextStyle(fontFamily:'Gilroy', fontSize:16, color:Colors.black)),
-                    ),
-                  ),
-                  const SizedBox(width:12),
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(48), backgroundColor: isFilled ? const Color(0xFF148A09) : Colors.grey, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                      onPressed: isFilled && !_sending ? _sendSms : null,
-                      child: _sending
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('Далее', style: TextStyle(fontFamily:'Gilroy', fontSize:16, color:Colors.white, fontWeight: FontWeight.w600)),
-                    ),
-                  ),
-                ],
+            ),
+            const SizedBox(height:24),
+            Row(children: [
+              Expanded(
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('cancel', style: TextStyle(fontFamily:'Gilroy', fontSize:16, color:Colors.black)).tr(),
+                ),
               ),
-              const SizedBox(height:24),
-            ],
-          ),
+              const SizedBox(width:12),
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(48), backgroundColor: _valid ? const Color(0xFF148A09) : Colors.grey, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  onPressed: _valid && !_sending ? _sendSms : null,
+                  child: _sending
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('next', style: TextStyle(fontFamily:'Gilroy', fontSize:16, color:Colors.white, fontWeight: FontWeight.w600)).tr(),
+                ),
+              ),
+            ]),
+            const SizedBox(height:24),
+          ]),
         ),
       ),
     );
   }
 }
 
+/// Лист для ввода кода подтверждения
 class ChangePhoneNumberCodeSheet extends StatefulWidget {
-  const ChangePhoneNumberCodeSheet({Key? key}) : super(key: key);
+  final String verificationId;
+  final String newPhone;
+  const ChangePhoneNumberCodeSheet({
+    Key? key,
+    required this.verificationId,
+    required this.newPhone,
+  }) : super(key: key);
 
   @override
   State<ChangePhoneNumberCodeSheet> createState() => _ChangePhoneNumberCodeSheetState();
@@ -516,92 +530,172 @@ class _ChangePhoneNumberCodeSheetState extends State<ChangePhoneNumberCodeSheet>
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
   bool _verifying = false;
 
-  bool get isAllFilled => _codeCtrls.every((c) => c.text.isNotEmpty);
+  bool get _allFilled => _codeCtrls.every((c) => c.text.isNotEmpty);
   String get _smsCode => _codeCtrls.map((c) => c.text).join();
 
   @override
   void dispose() {
-    for (var c in _codeCtrls) c.dispose();
-    for (var f in _focusNodes) f.dispose();
+    for (final c in _codeCtrls) c.dispose();
+    for (final f in _focusNodes) f.dispose();
     super.dispose();
   }
 
   Future<void> _verify() async {
-    final api = context.read<ApiService>();
     setState(() => _verifying = true);
     try {
-      final args = ModalRoute.of(context)!.settings.arguments as Map<String, String>;
-      final verId = args['verificationId']!;
-      final newNumber = args['newPhone']!;
-      final cred = PhoneAuthProvider.credential(verificationId: verId, smsCode: _smsCode);
+      final cred = PhoneAuthProvider.credential(
+        verificationId: widget.verificationId,
+        smsCode: _smsCode,
+      );
+      // обновляем в FirebaseAuth
       await FirebaseAuth.instance.currentUser!.updatePhoneNumber(cred);
-      await api.updateProfile({'phonenumber': newNumber});
-      Navigator.pop(context, {'verified':'true'});
+      // обновляем на вашем API
+      await context.read<ApiService>().updateProfile({'phonenumber': widget.newPhone});
+      Navigator.pop(context, true);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка верификации: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('verify_error'.tr(args:[e.toString()]))));
       setState(() => _verifying = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
     return DraggableScrollableSheet(
       initialChildSize: 0.5, minChildSize: 0.3, maxChildSize: 0.8,
       builder: (_, scroll) => Container(
         decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
         child: SingleChildScrollView(
           controller: scroll,
-          padding: EdgeInsets.only(left:16, right:16, top:16, bottom:bottomInset),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(child: Container(width:50, height:5, decoration: BoxDecoration(color:Colors.grey[400], borderRadius: BorderRadius.circular(8)))),
-              const SizedBox(height:12),
-              const Center(child: Text('Сменить номер телефона', style: TextStyle(fontFamily:'Gilroy', fontWeight:FontWeight.bold, fontSize:16))),
-              const SizedBox(height:16),
-              const SizedBox(height:12),
-              Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(6, (i) => _buildBox(i)),
-                ),
+          padding: EdgeInsets.only(left:16, right:16, top:16, bottom:bottom),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Center(child: Container(width:50, height:5, decoration: BoxDecoration(color:Colors.grey[400], borderRadius: BorderRadius.circular(8)))),
+            const SizedBox(height:12),
+            const Center(child: Text('enter_code', style: TextStyle(fontFamily:'Gilroy', fontWeight:FontWeight.bold, fontSize:16))),
+            const SizedBox(height:16),
+            Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(6, (i) => _buildBox(i)),
               ),
-              const SizedBox(height:12),
-              SizedBox(
-                height: 48,
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), backgroundColor: isAllFilled ? const Color(0xFF148A09) : Colors.grey),
-                  onPressed: isAllFilled && !_verifying ? _verify : null,
-                  child: _verifying ? const CircularProgressIndicator(color: Colors.white) : const Text('Подтвердить', style: TextStyle(fontFamily:'Gilroy', fontWeight:FontWeight.w600, fontSize:16, color:Colors.white)),
+            ),
+            const SizedBox(height:12),
+            SizedBox(
+              height: 48,
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _allFilled ? const Color(0xFF148A09) : Colors.grey,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
+                onPressed: _allFilled && !_verifying ? _verify : null,
+                child: _verifying
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('confirm', style: TextStyle(fontFamily:'Gilroy', fontWeight:FontWeight.w600, fontSize:16, color:Colors.white)).tr(),
               ),
-              const SizedBox(height:24),
-            ],
-          ),
+            ),
+            const SizedBox(height:24),
+          ]),
         ),
       ),
     );
   }
 
-  Widget _buildBox(int index) {
+  Widget _buildBox(int idx) {
     return Container(
-      width:48, height:48, margin: EdgeInsets.only(right: index<5?8:0),
-      decoration: BoxDecoration(border: Border.all(color: _codeCtrls[index].text.isNotEmpty ? const Color(0xFF148A09) : Colors.grey), borderRadius: BorderRadius.circular(8)),
+      width:48, height:48,
+      margin: EdgeInsets.only(right: idx<5?8:0),
+      decoration: BoxDecoration(
+        border: Border.all(color: _codeCtrls[idx].text.isNotEmpty ? const Color(0xFF148A09) : Colors.grey),
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: TextField(
-        controller: _codeCtrls[index],
-        focusNode: _focusNodes[index],
+        controller: _codeCtrls[idx],
+        focusNode: _focusNodes[idx],
         keyboardType: TextInputType.number,
         textAlign: TextAlign.center,
         maxLength: 1,
         decoration: const InputDecoration(border: InputBorder.none, counterText: ''),
         style: const TextStyle(fontFamily:'Gilroy', fontSize:16),
         onChanged: (v) {
-          if (v.length==1 && index<5) _focusNodes[index+1].requestFocus();
-          if (v.isEmpty && index>0)   _focusNodes[index-1].requestFocus();
-          setState((){});
+          if (v.length == 1 && idx < 5) _focusNodes[idx+1].requestFocus();
+          if (v.isEmpty && idx > 0) _focusNodes[idx-1].requestFocus();
+          setState(() {});
         },
+      ),
+    );
+  }
+}
+
+class LanguageSheet extends StatelessWidget {
+  const LanguageSheet({Key? key}) : super(key: key);
+
+  Future<void> _changeLocale(BuildContext ctx, Locale locale) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('locale', locale.languageCode);
+
+    await ctx.setLocale(locale);
+
+    Navigator.of(ctx).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final currentCode = context.locale.languageCode; // 'ru' или 'ky'
+    BoxDecoration chip(bool selected) => BoxDecoration(
+      color: selected ? Colors.green[100] : Colors.grey[200],
+      borderRadius: BorderRadius.circular(12),
+    );
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'change_language',
+            style: Theme.of(context).textTheme.titleMedium,
+          ).tr(),
+          const SizedBox(height: 12),
+
+          // Кыргызча
+          GestureDetector(
+            onTap: () => _changeLocale(context, const Locale('ky')),
+            child: Container(
+              decoration: chip(currentCode == 'ky'),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              child: Row(
+                children: [
+                  Text('kg_language', style: const TextStyle(fontSize: 16)).tr(),
+                  const Spacer(),
+                  SvgPicture.asset('assets/ic_kg_language.svg', width: 20, height: 20),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Русский
+          GestureDetector(
+            onTap: () => _changeLocale(context, const Locale('ru')),
+            child: Container(
+              decoration: chip(currentCode == 'ru'),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              child: Row(
+                children: [
+                  Text('ru_language', style: const TextStyle(fontSize: 16)).tr(),
+                  const Spacer(),
+                  SvgPicture.asset('assets/ic_ru_language.svg', width: 20, height: 20),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
       ),
     );
   }

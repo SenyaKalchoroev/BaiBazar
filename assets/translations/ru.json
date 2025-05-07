@@ -7,5 +7,9 @@
   "logout": "Выйти",
   "search_hint": "Поиск",
   "categories": "Категории",
-  "products": "Продукты"
+  "products": "Продукты",
+  "change_language": "Сменить язык",
+  "ru_language": "Русский",
+  "kg_language": "Кыргызский",
+  "cart": "Корзина"
 }

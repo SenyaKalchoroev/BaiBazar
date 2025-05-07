@@ -37,6 +37,10 @@ dependencies:
   shared_preferences: ^2.0.15
   firebase_core: ^2.15.0
   firebase_auth: ^4.5.0
+
+  flutter_localizations:
+    sdk: flutter
+
   easy_localization: ^3.0.1
 
 
@@ -88,7 +92,9 @@ flutter:
       - assets/ic_edit.svg
       - assets/ic_phone.svg
       - assets/ic_kg_language.svg
-      - assets/translations/
+      - assets/ic_ru_language.svg
+      - assets/translations/ky.json
+      - assets/translations/ru.json
 
 
   fonts:

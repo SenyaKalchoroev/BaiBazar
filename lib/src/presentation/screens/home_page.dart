@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -53,7 +54,6 @@ class _HomePageState extends State<HomePage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // Поиск
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: TextField(
@@ -77,18 +77,17 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              // Категории
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Категории',
+                    'categories',
                     style: Theme.of(context)
                         .textTheme
                         .titleLarge
                         ?.copyWith(fontWeight: FontWeight.w600),
-                  ),
+                  ).tr(),
                 ),
               ),
               SizedBox(
@@ -120,12 +119,12 @@ class _HomePageState extends State<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Продукты',
+                      'products',
                       style: Theme.of(context)
                           .textTheme
                           .titleLarge
                           ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
+                    ).tr(),
                     Row(
                       children: [
                         Text(

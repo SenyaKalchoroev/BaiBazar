@@ -1,0 +1,32 @@
+{
+  "home": "Главная",
+  "profile": "Профиль",
+  "my_orders": "Мои заказы",
+  "edit_data": "Редактировать личные данные",
+  "change_phone": "Сменить номер телефона",
+  "logout": "Выйти",
+  "search_hint": "Поиск",
+  "categories": "Категории",
+  "products": "Продукты",
+  "change_language": "Сменить язык",
+  "ru_language": "Русский",
+  "kg_language": "Кыргызский",
+  "cart": "Корзина",
+  "new": "Новые",
+  "old": "Старые",
+  "price_for_products": "Цена за продукты",
+  "price_for_delivery": "Цена за доставку",
+  "all_price": "Итого",
+  "about_product": "О продукте",
+  "delete_product": "Удалить товар из корзины?",
+  "cancel": "Назад",
+  "next": "Далее",
+  "name": "Имя",
+  "save": "Сохранить",
+  "new_phone": "Новый номер",
+  "enter_code": "Введите код",
+  "confirm": "Подтвердить"
+
+
+
+}

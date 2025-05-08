@@ -1,0 +1,31 @@
+{
+  "home": "Башкы бет",
+  "profile": "Профилиңыз",
+  "my_orders": "Менин буйрутмаларым",
+  "edit_data": "Маалыматтарды өзгөртүү",
+  "change_phone": "Тел номерди алмаштыру",
+  "logout": "Чыгуу",
+  "search_hint": "Издөө",
+  "categories": "Категориялар",
+  "products": "Продуктылар",
+  "change_language": "Тилди Алмаштыроо",
+  "ru_language": "Орусча",
+  "kg_language": "Кыргызча",
+  "cart": "Себет",
+  "new": "Жаңы",
+  "old": "Эски",
+  "price_for_products": "Продуктылардын баасы",
+  "price_for_delivery": "Жеткирүү баасы",
+  "all_price": "Бардыгы",
+  "about_product": "Продукт жөнүндө",
+  "delete_product": "Нерсени арабага алып салуубу?",
+  "cancel": "Артка",
+  "next": "Андан ары",
+  "name": "Аты",
+  "save": "Сактоо",
+  "new_phone": "Жаңы номер",
+  "enter_code": "Кодту жазыпкойуңуз",
+  "confirm": "Ырастоо"
+
+
+}

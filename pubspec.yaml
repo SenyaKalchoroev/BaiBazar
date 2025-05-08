@@ -30,10 +30,24 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  flutter_svg: ^1.1.6
+  http: ^0.13.5
   provider: ^6.0.5
+  shared_preferences: ^2.0.15
+  firebase_core: ^2.15.0
+  firebase_auth: ^4.5.0
+
+  flutter_localizations:
+    sdk: flutter
+
+  easy_localization: ^3.0.1
+
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+
 
 dev_dependencies:
   flutter_test:
@@ -45,17 +59,60 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.10.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/ic_app.png"
 # The following section is specific to Flutter packages.
 flutter:
+
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+
+
+  assets:
+      - assets/ic_home.svg
+      - assets/ic_arrow_back.svg
+      - assets/ic_category.svg
+      - assets/ic_cart.svg
+      - assets/ic_profile.svg
+      - assets/ic_search.svg
+      - assets/ic_filter_product.svg
+      - assets/img_products.png
+      - assets/img_empty_cart.png
+      - assets/ic_delete.svg
+      - assets/ic_truck.svg
+      - assets/ic_carefully.svg
+      - assets/img_success_order.png
+      - assets/ic_my_orders.svg
+      - assets/ic_edit.svg
+      - assets/ic_phone.svg
+      - assets/ic_kg_language.svg
+      - assets/ic_ru_language.svg
+      - assets/translations/ky.json
+      - assets/translations/ru.json
+      - assets/ic_app_splash.svg
+
+
+  fonts:
+    - family: Gilroy
+      fonts:
+        - asset: assets/fonts/gilroy_heavy.ttf
+        - asset: assets/fonts/gilroy_light.ttf
+          weight: 400
+        - asset: assets/fonts/gilroy_medium.ttf
+          weight: 500
+        - asset: assets/fonts/gilroy_bold.ttf
+          weight: 700
 
   # To add assets to your application, add an assets section, like this:
   # assets:

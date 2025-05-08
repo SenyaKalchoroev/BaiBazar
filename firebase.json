@@ -1,0 +1,1 @@
+{"flutter":{"platforms":{"android":{"default":{"projectId":"baibazar-auth","appId":"1:487672783451:android:05a18d14ec0e285b74557e","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"baibazar-auth","configurations":{"android":"1:487672783451:android:05a18d14ec0e285b74557e","ios":"1:487672783451:ios:cb3ed11b60ae53e074557e"}}}}}}

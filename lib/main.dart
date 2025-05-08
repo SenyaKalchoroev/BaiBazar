@@ -14,7 +14,6 @@ import 'src/presentation/providers/category_provider.dart';
 import 'src/presentation/providers/product_provider.dart';
 import 'src/presentation/providers/cart_provider.dart';
 import 'src/presentation/providers/order_provider.dart';
-import 'src/presentation/screens/main_navigation.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -90,9 +89,22 @@ class MyApp extends StatelessWidget {
         supportedLocales: context.supportedLocales,
         localizationsDelegates: context.localizationDelegates,
 
-        theme: ThemeData(primarySwatch: Colors.green),
+        theme: ThemeData(
+          primarySwatch: Colors.green,
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black,
+            iconTheme: IconThemeData(color: Colors.black),
+            titleTextStyle: TextStyle(
+              color: Colors.black,
+              fontFamily: 'Gilroy',
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+        ),
 
-        home:  const SplashScreen(),
+        home: const SplashScreen(),
       ),
     );
   }

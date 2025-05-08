@@ -329,7 +329,7 @@ class _EditPersonalDataSheetState extends State<EditPersonalDataSheet> {
               _buildTextField(surnameController),
 
               const SizedBox(height: 12),
-              const Text('Имя', style: TextStyle(fontFamily: 'Gilroy', fontSize: 14, color: Colors.black54)),
+              const Text('name', style: TextStyle(fontFamily: 'Gilroy', fontSize: 14, color: Colors.black54)).tr(),
               const SizedBox(height: 6),
               _buildTextField(nameController),
 
@@ -348,7 +348,7 @@ class _EditPersonalDataSheetState extends State<EditPersonalDataSheet> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Отмена', style: TextStyle(fontFamily: 'Gilroy', fontSize: 16, color: Colors.black)),
+                      child: const Text('cancel', style: TextStyle(fontFamily: 'Gilroy', fontSize: 16, color: Colors.black)).tr(),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -369,9 +369,9 @@ class _EditPersonalDataSheetState extends State<EditPersonalDataSheet> {
                         Navigator.pop(context, true);
                       }
                           : null,
-                      child: const Text('Сохранить',
+                      child: const Text('save',
                         style: TextStyle(fontFamily: 'Gilroy', fontSize: 16, color: Colors.white, fontWeight: FontWeight.w600),
-                      ),
+                      ).tr(),
                     ),
                   ),
                 ],
@@ -433,23 +433,25 @@ class _ChangePhoneNumberSheetState extends State<ChangePhoneNumberSheet> {
 
   Future<void> _sendSms() async {
     setState(() => _sending = true);
-    final phone = _ctrl.text.trim();
-    await FirebaseAuth.instance.verifyPhoneNumber(
-      phoneNumber: phone,
-      timeout: const Duration(seconds: 60),
-      verificationCompleted: (_) {},
-      verificationFailed: (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('sms_error'.tr(args:[e.message!]))));
-        setState(() => _sending = false);
-      },
-      codeSent: (verId, _) {
-        _verificationId = verId;
-        setState(() => _sending = false);
-        // возвращаем и verificationId, и новый номер
-        Navigator.pop(context, _SmsArguments(verId, phone));
-      },
-      codeAutoRetrievalTimeout: (_) {},
-    );
+    try {
+      final phone = _ctrl.text.trim();
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: phone,
+        timeout: const Duration(seconds: 60),
+        verificationCompleted: (_) {},
+        verificationFailed: (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('sms_error'.tr(args: [e.message ?? '']))),
+          );
+        },
+        codeSent: (verId, _) {
+          Navigator.pop(context, _SmsArguments(verId, phone));
+        },
+        codeAutoRetrievalTimeout: (_) {},
+      );
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
   }
 
   @override
@@ -465,9 +467,9 @@ class _ChangePhoneNumberSheetState extends State<ChangePhoneNumberSheet> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Center(child: Container(width:50, height:5, decoration: BoxDecoration(color:Colors.grey[400], borderRadius: BorderRadius.circular(8)))),
             const SizedBox(height:12),
-            const Center(child: Text('change_phone', style: TextStyle(fontFamily:'Gilroy', fontWeight:FontWeight.bold, fontSize:16))),
+            Center(child: Text('change_phone', style: TextStyle(fontFamily:'Gilroy', fontWeight:FontWeight.bold, fontSize:16)).tr()),
             const SizedBox(height:16),
-            const Text('new_phone', style: TextStyle(fontFamily:'Gilroy', fontSize:14, color:Colors.black54)).tr(),
+            Text('new_phone', style: TextStyle(fontFamily:'Gilroy', fontSize:14, color:Colors.black54)).tr(),
             const SizedBox(height:6),
             Container(
               height:48,
@@ -547,10 +549,16 @@ class _ChangePhoneNumberCodeSheetState extends State<ChangePhoneNumberCodeSheet>
         smsCode: _smsCode,
       );
       await FirebaseAuth.instance.currentUser!.updatePhoneNumber(cred);
-      await context.read<ApiService>().updateProfile({'phonenumber': widget.newPhone});
+
+      await context.read<ApiService>().updateProfile({
+        'phonenumber': widget.newPhone,
+      });
+
       Navigator.pop(context, true);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('verify_error'.tr(args:[e.toString()]))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('verify_error'.tr(args: [e.toString()]))),
+      );
       setState(() => _verifying = false);
     }
   }
@@ -568,7 +576,7 @@ class _ChangePhoneNumberCodeSheetState extends State<ChangePhoneNumberCodeSheet>
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Center(child: Container(width:50, height:5, decoration: BoxDecoration(color:Colors.grey[400], borderRadius: BorderRadius.circular(8)))),
             const SizedBox(height:12),
-            const Center(child: Text('enter_code', style: TextStyle(fontFamily:'Gilroy', fontWeight:FontWeight.bold, fontSize:16))),
+            Center(child: Text('enter_code', style: TextStyle(fontFamily:'Gilroy', fontWeight:FontWeight.bold, fontSize:16)).tr()),
             const SizedBox(height:16),
             Center(
               child: Row(

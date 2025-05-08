@@ -49,7 +49,10 @@ class ApiService {
       }),
     );
     _check(res);
-    final body = json.decode(res.body) as Map<String, dynamic>;
+
+    final decoded = utf8.decode(res.bodyBytes);
+    final body = json.decode(decoded) as Map<String, dynamic>;
+
     await _saveToken(body['access_token'] as String);
   }
 
@@ -59,10 +62,12 @@ class ApiService {
       headers: _headers(),
     );
     _check(res);
-    final body = json.decode(res.body) as Map<String, dynamic>;
-    return (body['data'] as Map<String, dynamic>);
-  }
 
+    final decoded = utf8.decode(res.bodyBytes);
+    final body = json.decode(decoded) as Map<String, dynamic>;
+
+    return Map<String, dynamic>.from(body['data'] as Map);
+  }
 
   Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> d) async {
     final res = await http.put(
@@ -71,9 +76,10 @@ class ApiService {
       body: json.encode(d),
     );
     _check(res);
-    return json.decode(res.body) as Map<String, dynamic>;
-  }
 
+    final decoded = utf8.decode(res.bodyBytes);
+    return json.decode(decoded) as Map<String, dynamic>;
+  }
 
   Future<void> addToCart(int productId) async {
     final res = await http.post(
@@ -89,7 +95,9 @@ class ApiService {
       headers: _headers(),
     );
     _check(res);
-    return json.decode(res.body) as Map<String, dynamic>;
+
+    final decoded = utf8.decode(res.bodyBytes);
+    return json.decode(decoded) as Map<String, dynamic>;
   }
 
   Future<void> deleteCartItem(int cartId) async {
@@ -125,8 +133,9 @@ class ApiService {
         : Uri.parse('$_base/order/get/');
     final res = await http.get(uri, headers: _headers());
     _check(res);
-    final decoded = json.decode(utf8.decode(res.bodyBytes)) as List<dynamic>;
-    return decoded;
+
+    final decoded = utf8.decode(res.bodyBytes);
+    return json.decode(decoded) as List<dynamic>;
   }
 
   Future<Map<String, dynamic>> getOrderDetail(int id) async {
@@ -135,16 +144,20 @@ class ApiService {
       headers: _headers(),
     );
     _check(res);
+
     final decoded = utf8.decode(res.bodyBytes);
     return json.decode(decoded) as Map<String, dynamic>;
   }
+
   Future<List<dynamic>> getCategories() async {
     final res = await http.get(
       Uri.parse('$_base/product/category/'),
       headers: _headers(),
     );
     _check(res);
-    return json.decode(res.body) as List<dynamic>;
+
+    final decoded = utf8.decode(res.bodyBytes);
+    return json.decode(decoded) as List<dynamic>;
   }
 
   Future<List<dynamic>> getProducts() async {
@@ -153,7 +166,9 @@ class ApiService {
       headers: _headers(),
     );
     _check(res);
-    return json.decode(res.body) as List<dynamic>;
+
+    final decoded = utf8.decode(res.bodyBytes);
+    return json.decode(decoded) as List<dynamic>;
   }
 
   Future<List<dynamic>> getProductsByTag(String tag) async {
@@ -162,7 +177,9 @@ class ApiService {
       headers: _headers(),
     );
     _check(res);
-    return json.decode(res.body) as List<dynamic>;
+
+    final decoded = utf8.decode(res.bodyBytes);
+    return json.decode(decoded) as List<dynamic>;
   }
 
   Future<Map<String, dynamic>> getProductById(int id) async {
@@ -171,6 +188,8 @@ class ApiService {
       headers: _headers(),
     );
     _check(res);
-    return json.decode(res.body) as Map<String, dynamic>;
+
+    final decoded = utf8.decode(res.bodyBytes);
+    return json.decode(decoded) as Map<String, dynamic>;
   }
 }

@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -90,11 +91,11 @@ class _CategoriesPageState extends State<CategoriesPage> {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Категории',
+                  'categories',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
-                ),
+                ).tr(),
               ),
             ),
             Expanded(

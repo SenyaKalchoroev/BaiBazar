@@ -14,6 +14,14 @@ class ProductCard extends StatelessWidget {
     this.onTap,
   }) : super(key: key);
 
+  String get _integerPrice {
+    final sepIndex = price.indexOf(RegExp(r'[.,]'));
+    if (sepIndex >= 0) {
+      return price.substring(0, sepIndex);
+    }
+    return price;
+  }
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
@@ -42,7 +50,7 @@ class ProductCard extends StatelessWidget {
                       width: double.infinity,
                       height: 110,
                       fit: BoxFit.cover,
-                      errorBuilder: (ctx, err, stack) => Container(
+                      errorBuilder: (_, __, ___) => Container(
                         width: double.infinity,
                         height: 110,
                         color: Colors.grey[300],
@@ -60,7 +68,7 @@ class ProductCard extends StatelessWidget {
                     style: const TextStyle(
                       fontFamily: 'Gilroy',
                       fontWeight: FontWeight.w600,
-                      fontSize: 16,  // увеличили
+                      fontSize: 16,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -74,7 +82,7 @@ class ProductCard extends StatelessWidget {
                     style: TextStyle(
                       fontFamily: 'Gilroy',
                       fontWeight: FontWeight.w500,
-                      fontSize: 15,  // чуть больше
+                      fontSize: 15,
                       color: Colors.grey[700],
                     ),
                   ),
@@ -86,11 +94,11 @@ class ProductCard extends StatelessWidget {
               left: 10,
               bottom: 4,
               child: Text(
-                price,
+                '${_integerPrice}c',
                 style: const TextStyle(
                   fontFamily: 'Gilroy',
                   fontWeight: FontWeight.w600,
-                  fontSize: 16,  // увеличили
+                  fontSize: 16,
                   color: Color(0xFF0A6800),
                 ),
               ),

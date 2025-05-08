@@ -1,4 +1,5 @@
 // lib/src/presentation/screens/main_navigation.dart
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -52,34 +53,74 @@ class _MainNavigationState extends State<MainNavigation> {
       _authorized ? const ProfileAuthorizedPage() : const ProfilePage(),
     ];
 
+    final items = <_NavItem>[
+      _NavItem(icon: 'assets/ic_home.svg',      label: tr('home')),
+      _NavItem(icon: 'assets/ic_category.svg',  label: tr('categories')),
+      _NavItem(icon: 'assets/ic_cart.svg',      label: tr('cart')),
+      _NavItem(icon: 'assets/ic_profile.svg',   label: tr('profile')),
+    ];
+
     return Scaffold(
-      body: screens[_current],
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _current,
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.black,
-        backgroundColor: Colors.white,
-        onTap: (i) => setState(() => _current = i),
-        items: [
-          BottomNavigationBarItem(
-            icon: SvgPicture.asset('assets/ic_home.svg', width: 24, height: 24),
-            label: tr('home'),
+      body: SafeArea(
+        top: true,
+        bottom: false,
+        child: screens[_current],
+      ),
+
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Container(
+          color: Colors.white,
+          height: 60,
+          child: Row(
+            children: List.generate(items.length, (i) {
+              final item = items[i];
+              final selected = i == _current;
+
+              return Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => setState(() => _current = i),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SvgPicture.asset(
+                        item.icon,
+                        width: 24,
+                        height: 24,
+                        color: Colors.green
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        item.label,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        width: 46,
+                        height: 2,
+                        decoration: BoxDecoration(
+                          color: selected ? Colors.green : Colors.transparent,
+                          borderRadius: BorderRadius.circular(1),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
           ),
-          BottomNavigationBarItem(
-            icon: SvgPicture.asset('assets/ic_category.svg', width: 24, height: 24),
-            label: tr('categories'),
-          ),
-          BottomNavigationBarItem(
-            icon: SvgPicture.asset('assets/ic_cart.svg', width: 24, height: 24),
-            label: tr('cart'),
-          ),
-          BottomNavigationBarItem(
-            icon: SvgPicture.asset('assets/ic_profile.svg', width: 24, height: 24),
-            label: tr('profile'),
-          ),
-        ],
+        ),
       ),
     );
   }
+}
+
+class _NavItem {
+  final String icon;
+  final String label;
+  const _NavItem({required this.icon, required this.label});
 }

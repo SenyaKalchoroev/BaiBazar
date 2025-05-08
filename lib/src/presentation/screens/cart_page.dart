@@ -1,5 +1,6 @@
 // lib/src/presentation/screens/cart_page.dart
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../data/models/cart_model.dart';
@@ -27,7 +28,7 @@ class _CartPageState extends State<CartPage> {
       context: context,
       builder:
           (_) => AlertDialog(
-            title: const Text('Удалить товар из корзины?'),
+            title: const Text('delete_product').tr(),
             content: Text(item.title),
             actions: [
               TextButton(
@@ -72,15 +73,15 @@ class _CartPageState extends State<CartPage> {
             Column(
               children: [
                 const SizedBox(height: 16),
-                const Center(
+                Center(
                   child: Text(
-                    'Корзина',
+                    'cart',
                     style: TextStyle(
                       fontFamily: 'Gilroy',
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                     ),
-                  ),
+                  ).tr(),
                 ),
                 const SizedBox(height: 16),
                 Expanded(
@@ -139,7 +140,7 @@ class _CartPageState extends State<CartPage> {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text('Цена за продукты'),
+                                    const Text('price_for_products').tr(),
                                     Text(
                                       '${cart.fullPrice}c',
                                       style: const TextStyle(
@@ -152,8 +153,8 @@ class _CartPageState extends State<CartPage> {
                                 Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
-                                  children: const [
-                                    Text('Цена за доставку'),
+                                  children:[
+                                    const Text('price_for_delivery').tr(),
                                     Text(
                                       '50c',
                                       style: TextStyle(
@@ -169,7 +170,7 @@ class _CartPageState extends State<CartPage> {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text('Итого'),
+                                    const Text('all_price').tr(),
                                     Text(
                                       '${(cart.fullPrice + 50).toStringAsFixed(2)}c',
                                       style: const TextStyle(

@@ -511,7 +511,6 @@ class _ChangePhoneNumberSheetState extends State<ChangePhoneNumberSheet> {
   }
 }
 
-/// Лист для ввода кода подтверждения
 class ChangePhoneNumberCodeSheet extends StatefulWidget {
   final String verificationId;
   final String newPhone;
@@ -547,9 +546,7 @@ class _ChangePhoneNumberCodeSheetState extends State<ChangePhoneNumberCodeSheet>
         verificationId: widget.verificationId,
         smsCode: _smsCode,
       );
-      // обновляем в FirebaseAuth
       await FirebaseAuth.instance.currentUser!.updatePhoneNumber(cred);
-      // обновляем на вашем API
       await context.read<ApiService>().updateProfile({'phonenumber': widget.newPhone});
       Navigator.pop(context, true);
     } catch (e) {

@@ -101,7 +101,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     const SizedBox(width: 12),
                     const Expanded(
                       child: Text(
-                        'Войти в приложение\n\nДобро пожаловать в Bai Bazar! '
+                        'Войти в приложение\n\nДобро пожаловать в Bai Bazaar! '
                             'Для того, чтобы совершать заказы вам нужно войти',
                         style: TextStyle(
                           fontFamily: 'Gilroy',

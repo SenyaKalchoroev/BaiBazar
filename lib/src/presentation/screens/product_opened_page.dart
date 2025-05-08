@@ -1,9 +1,12 @@
+// lib/src/presentation/screens/product_opened_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'package:baibazar_app/src/presentation/providers/product_provider.dart';
-import 'package:baibazar_app/src/data/models/product_model.dart';
+
+import '../../core/api/api_service.dart';
 import '../providers/cart_provider.dart';
+import '../providers/product_provider.dart';
+import '../../data/models/product_model.dart';
 import 'main_navigation.dart';
 
 class ProductOpenedPage extends StatefulWidget {
@@ -51,7 +54,7 @@ class _ProductOpenedPageState extends State<ProductOpenedPage> {
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Material(
-            color: Color(0xFEFEFEF),
+            color: Colors.grey[300],
             shape: const CircleBorder(),
             child: IconButton(
               icon: SvgPicture.asset(
@@ -128,42 +131,37 @@ class _ProductOpenedPageState extends State<ProductOpenedPage> {
           ),
 
           Padding(
-            padding:
-            const EdgeInsets.only(left: 20, top: 16, right: 16, bottom: 16),
+            padding: const EdgeInsets.only(
+                left: 20, top: 16, right: 16, bottom: 16),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 product.title,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
           ),
 
+          // ---------------- Количество / Цена ----------------
           Padding(
-            padding: const EdgeInsets.only(left: 20, right: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: const [
                 Text(
                   'Укажите количество',
-                  style: TextStyle(
-                    color: Colors.black54,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.black54, fontSize: 14),
                 ),
                 Text(
                   'Цена за 1кг',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black54,
-                  ),
+                  style: TextStyle(color: Colors.black54, fontSize: 14),
                 ),
               ],
             ),
           ),
-
           Padding(
             padding:
             const EdgeInsets.only(left: 20, right: 16, top: 8, bottom: 8),
@@ -204,12 +202,10 @@ class _ProductOpenedPageState extends State<ProductOpenedPage> {
 
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            child: Divider(
-              color: Color(0xFFEBEBEB),
-              thickness: 1,
-            ),
+            child: Divider(color: Color(0xFFEBEBEB), thickness: 1),
           ),
 
+          // ---------------- Описание ----------------
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Align(
@@ -223,7 +219,6 @@ class _ProductOpenedPageState extends State<ProductOpenedPage> {
               ),
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: _buildDescriptionText(product.description),
@@ -242,26 +237,56 @@ class _ProductOpenedPageState extends State<ProductOpenedPage> {
                   ),
                 ),
                 onPressed: () async {
-                  await context.read<CartProvider>().addToCart(widget.productId);
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const MainNavigation(initialIndex: 2),
-                    ),
-                        (route) => false,
-                  );
+                  final api = context.read<ApiService>();
+
+                  if (!api.isAuthorized) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Зарегистрируйтесь прежде чем добавлять продукты в корзину',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
+                  try {
+                    await context
+                        .read<CartProvider>()
+                        .addToCart(widget.productId);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Успешно добавлено'),
+                      ),
+                    );
+
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                        const MainNavigation(initialIndex: 2),
+                      ),
+                          (route) => false,
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content:
+                        Text('Ошибка при добавлении: ${e.toString()}'),
+                      ),
+                    );
+                  }
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
                       'В корзину',
                       style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white),
                     ),
                     const SizedBox(width: 8),
                     SvgPicture.asset(
@@ -287,15 +312,12 @@ class _ProductOpenedPageState extends State<ProductOpenedPage> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            description,
-            style:
-            const TextStyle(fontSize: 14, color: Colors.black54),
-          ),
+          Text(description,
+              style:
+              const TextStyle(fontSize: 14, color: Colors.black54)),
           const SizedBox(height: 8),
           GestureDetector(
-            onTap: () =>
-                setState(() => _isDescriptionExpanded = false),
+            onTap: () => setState(() => _isDescriptionExpanded = false),
             child: const Text(
               'Скрыть',
               style: TextStyle(
@@ -305,17 +327,13 @@ class _ProductOpenedPageState extends State<ProductOpenedPage> {
         ],
       );
     } else {
-      final textSpan = TextSpan(text: description);
-      final textPainter = TextPainter(
-        text: textSpan,
+      final tp = TextPainter(
+        text: TextSpan(text: description),
         maxLines: maxLinesCollapsed,
         textDirection: TextDirection.ltr,
-      );
-      textPainter.layout(
-        maxWidth: MediaQuery.of(context).size.width - 32,
-      );
+      )..layout(maxWidth: MediaQuery.of(context).size.width - 32);
 
-      if (textPainter.didExceedMaxLines) {
+      if (tp.didExceedMaxLines) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -328,8 +346,7 @@ class _ProductOpenedPageState extends State<ProductOpenedPage> {
             ),
             const SizedBox(height: 8),
             GestureDetector(
-              onTap: () =>
-                  setState(() => _isDescriptionExpanded = true),
+              onTap: () => setState(() => _isDescriptionExpanded = true),
               child: const Text(
                 'Показать ещё',
                 style: TextStyle(
@@ -340,11 +357,9 @@ class _ProductOpenedPageState extends State<ProductOpenedPage> {
           ],
         );
       } else {
-        return Text(
-          description,
-          style:
-          const TextStyle(fontSize: 14, color: Colors.black54),
-        );
+        return Text(description,
+            style:
+            const TextStyle(fontSize: 14, color: Colors.black54));
       }
     }
   }

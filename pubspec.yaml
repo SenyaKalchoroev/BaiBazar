@@ -95,6 +95,7 @@ flutter:
       - assets/ic_ru_language.svg
       - assets/translations/ky.json
       - assets/translations/ru.json
+      - assets/ic_app_splash.svg
 
 
   fonts:

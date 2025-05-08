@@ -1,11 +1,8 @@
-// lib/src/presentation/screens/code_input_page.dart
-
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
 import '../../core/api/api_service.dart';
 import 'profile_data_page.dart';
 
@@ -161,7 +158,10 @@ class _CodeInputPageState extends State<CodeInputPage> {
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(children: List.generate(6, box)),
+              child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(6, box)
+              ),
             ),
             const SizedBox(height: 24),
             Padding(

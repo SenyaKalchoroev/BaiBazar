@@ -78,7 +78,7 @@ class _HomePageState extends State<HomePage> {
               ),
 
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 16,vertical: 16),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(

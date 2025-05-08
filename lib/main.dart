@@ -1,3 +1,4 @@
+import 'package:baibazar_app/src/presentation/screens/splash_screen_page.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -91,7 +92,7 @@ class MyApp extends StatelessWidget {
 
         theme: ThemeData(primarySwatch: Colors.green),
 
-        home: const MainNavigation(),
+        home:  const SplashScreen(),
       ),
     );
   }
